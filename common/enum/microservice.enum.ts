@@ -9,4 +9,8 @@ export enum MicroserviceEnum {
   BillingService = 'BILLING_SERVICE',
   TradeService = 'TRADE_SERVICE',
   MailService = 'MAIL_SERVICE',
+
+  MarketWorker = 'MARKET_WORKER',
+  LimitWorker = 'LIMIT_WORKER',
+  StopLossWorker = 'STOP_LOSS_WORKER',
 }

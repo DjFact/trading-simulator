@@ -43,7 +43,7 @@
         "tsConfigPath": "apps/auth-service/tsconfig.app.json"
       }
     },
-    "trade-service": {
+    "billing-service": {
       "type": "application",
       "root": "apps/billing-service",
       "entryFile": "main",
@@ -70,13 +70,31 @@
         "tsConfigPath": "apps/mail-service/tsconfig.app.json"
       }
     },
-    "console/market-worker": {
+    "market-worker": {
       "type": "application",
-      "root": "apps/console/market-worker",
+      "root": "apps/workers/market-worker",
       "entryFile": "main",
-      "sourceRoot": "apps/console/market-worker/src",
+      "sourceRoot": "apps/workers/market-worker/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/console/market-worker/tsconfig.app.json"
+        "tsConfigPath": "apps/workers/market-worker/tsconfig.app.json"
+      }
+    },
+    "limit-worker": {
+      "type": "application",
+      "root": "apps/workers/limit-worker",
+      "entryFile": "main",
+      "sourceRoot": "apps/workers/limit-worker/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/workers/limit-worker/tsconfig.app.json"
+      }
+    },
+    "stop-loss-worker": {
+      "type": "application",
+      "root": "apps/workers/stop-loss-worker",
+      "entryFile": "main",
+      "sourceRoot": "apps/workers/stop-loss-worker/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/workers/stop-loss-worker/tsconfig.app.json"
       }
     }
   }

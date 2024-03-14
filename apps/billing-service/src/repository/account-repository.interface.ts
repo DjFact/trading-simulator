@@ -12,15 +12,10 @@ export interface IAccountRepository {
 
   create(userId: string): Promise<Account>;
 
-  incrementBalance(
+  increment(
     userId: string,
-    amount: number,
+    balance?: number,
+    reserved?: number,
     transaction?: Transaction,
   ): Promise<[affectedRows: Account[], affectedCount?: number]>;
-
-  incrementReserved(
-    userId: string,
-    amount: number,
-    transaction?: Transaction,
-  ): Promise<[affectedRows: Account[], affectedCount?: number]>
 }

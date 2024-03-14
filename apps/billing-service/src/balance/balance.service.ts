@@ -46,9 +46,10 @@ export class BalanceService {
 
   async topUpDeposit({ userId, amount }: TopUpDto): Promise<AccountEntity> {
     return this.sequelize.transaction(async (transaction) => {
-      const [rows] = await this.accountRepository.incrementBalance(
+      const [rows] = await this.accountRepository.increment(
         userId,
         amount,
+        null,
         transaction,
       );
       if (!rows?.length) {

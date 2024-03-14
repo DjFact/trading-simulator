@@ -6,5 +6,5 @@
 export enum OrderTypeEnum {
   Market = 'market',
   Limit = 'limit',
-  StopLimit = 'stopLimit',
+  StopLoss = 'stopLoss',
 }

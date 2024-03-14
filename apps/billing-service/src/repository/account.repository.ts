@@ -6,13 +6,11 @@ import { InjectModel } from '@nestjs/sequelize';
 import { IAccountRepository } from './account-repository.interface';
 import { Account } from '../model/account.model';
 import { Holding } from '../model/holding.model';
-import { Sequelize } from 'sequelize-typescript';
 import { Transaction } from 'sequelize';
 
 @Injectable()
 export class AccountRepository implements IAccountRepository {
   constructor(
-    private readonly sequelize: Sequelize,
     @InjectModel(Account) private readonly accountModel: typeof Account,
   ) {}
 
@@ -30,27 +28,14 @@ export class AccountRepository implements IAccountRepository {
     return this.accountModel.create({ userId });
   }
 
-  async incrementBalance(
+  async increment(
     userId: string,
-    amount: number,
+    balance?: number,
+    reserved?: number,
     transaction?: Transaction,
   ): Promise<[affectedRows: Account[], affectedCount?: number]> {
     return this.accountModel.increment(
-      { balance: amount },
-      {
-        where: { userId },
-        transaction,
-      },
-    );
-  }
-
-  async incrementReserved(
-    userId: string,
-    amount: number,
-    transaction?: Transaction,
-  ): Promise<[affectedRows: Account[], affectedCount?: number]> {
-    return this.accountModel.increment(
-      { reserved: amount },
+      { balance, reserved },
       {
         where: { userId },
         transaction,

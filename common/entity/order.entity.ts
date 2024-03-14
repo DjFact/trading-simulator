@@ -69,14 +69,28 @@ export class OrderEntity {
   })
   closePrice?: number;
 
+  @ApiPropertyOptional({
+    type: Number,
+    description: 'Order total price',
+    example: 171.13,
+  })
+  total?: number;
+
   @ApiProperty({
     enum: OrderStatusEnum,
     description: 'Order status',
   })
   status: OrderStatusEnum;
 
-  @ApiPropertyOptional({ type: Date, description: 'Order close at' })
-  closeAt?: Date;
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Order info message',
+    example: 'Insufficient funds',
+  })
+  info?: string;
+
+  @ApiPropertyOptional({ type: Date, description: 'Order closed at' })
+  closedAt?: Date;
 
   @ApiProperty({ type: Date, description: 'Order created at' })
   createdAt: Date;

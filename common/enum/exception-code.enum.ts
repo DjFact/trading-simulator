@@ -30,6 +30,9 @@ export enum ExceptionCodeEnum {
   AlreadyVerified = 4004,
   TwoFactorVerificationNeeded = 4005,
 
+  StrategyNotFound = 5000,
+  StrategyProcessingError = 5001,
+
   UnknownClientType = 6009,
 
   SendMailError = 8000,

@@ -14,6 +14,8 @@ import { AccountRepository } from '../repository/account.repository';
 import { OrderTypeEnum } from '../../../../common/enum/order-type.enum';
 import { OrderStatusEnum } from '../../../../common/enum/order-status.enum';
 import { OrderActionTypeEnum } from '../../../../common/enum/order-action-type.enum';
+import { Transaction } from 'sequelize';
+import { AccountEntity } from '../../../../common/entity/balance.entity';
 
 @Injectable()
 export class OrderService {
@@ -33,6 +35,51 @@ export class OrderService {
     return orders.map((order) => new OrderEntity(order));
   }
 
+  async getAccountAndCheckFunds(
+    order: Partial<OrderEntity>,
+    price: number,
+    transaction: Transaction,
+  ): Promise<AccountEntity> {
+    const account = await this.accountRepository.findByUserId(
+      order.userId,
+      transaction,
+    );
+    if (!account) {
+      throw new BillingException(
+        'Account not found',
+        ExceptionCodeEnum.AccountNotFound,
+      );
+    }
+    if (order.action === OrderActionTypeEnum.Buy) {
+      const currentPrice =
+        order.orderType === OrderTypeEnum.Market ? price : order.limit;
+      if (account.balance - account.reserved < currentPrice * order.quantity) {
+        throw new BillingException(
+          'Insufficient funds',
+          ExceptionCodeEnum.InsufficientFunds,
+        );
+      }
+    } else {
+      const holding = account.holdings.find(
+        (h) => h.assetSymbol === order.assetSymbol,
+      );
+      if (!holding) {
+        throw new BillingException(
+          'Holding not found',
+          ExceptionCodeEnum.HoldingNotFound,
+        );
+      }
+      if (holding.quantity < order.quantity) {
+        throw new BillingException(
+          'Insufficient holdings',
+          ExceptionCodeEnum.InsufficientFunds,
+        );
+      }
+    }
+
+    return new AccountEntity(account);
+  }
+
   async createOrder(orderDto: OrderCreateDto): Promise<OrderEntity> {
     if (orderDto.orderType !== OrderTypeEnum.Market && !orderDto.limit) {
       throw new BillingException(
@@ -46,51 +93,14 @@ export class OrderService {
 
     const transaction = await this.sequelize.transaction();
     /** Check if account has enough funds */
-    const account = await this.accountRepository.findByUserId(
-      orderDto.userId,
-      transaction,
-    );
-    if (!account) {
-      throw new BillingException(
-        'Account not found',
-        ExceptionCodeEnum.AccountNotFound,
-      );
-    }
-    if (orderDto.action === OrderActionTypeEnum.Buy) {
-      const price =
-        orderDto.orderType === OrderTypeEnum.Market
-          ? openPrice
-          : orderDto.limit;
-      if (account.balance - account.reserved < price * orderDto.quantity) {
-        throw new BillingException(
-          'Insufficient funds',
-          ExceptionCodeEnum.InsufficientFunds,
-        );
-      }
-    } else {
-      const holding = account.holdings.find(
-        (h) => h.assetSymbol === orderDto.assetSymbol,
-      );
-      if (!holding) {
-        throw new BillingException(
-          'Holding not found',
-          ExceptionCodeEnum.HoldingNotFound,
-        );
-      }
-      if (holding.quantity < orderDto.quantity) {
-        throw new BillingException(
-          'Insufficient holdings',
-          ExceptionCodeEnum.InsufficientFunds,
-        );
-      }
-    }
+    await this.getAccountAndCheckFunds(orderDto, openPrice, transaction);
 
     try {
       const promises: Promise<any>[] = [
         this.orderRepository.create(
           {
             ...orderDto,
-            status: OrderStatusEnum.Open,
+            status: OrderStatusEnum.Opened,
             openPrice,
           },
           transaction,
@@ -98,8 +108,9 @@ export class OrderService {
       ];
       if (orderDto.action === OrderActionTypeEnum.Buy) {
         promises.push(
-          this.accountRepository.incrementReserved(
+          this.accountRepository.increment(
             orderDto.userId,
+            null,
             orderDto.orderType === OrderTypeEnum.Market
               ? openPrice
               : orderDto.limit,
@@ -134,7 +145,7 @@ export class OrderService {
       );
     }
 
-    if (order.status !== OrderStatusEnum.Open) {
+    if (order.status !== OrderStatusEnum.Opened) {
       throw new BillingException(
         'Order already closed',
         ExceptionCodeEnum.OrderAlreadyClosed,
@@ -145,14 +156,15 @@ export class OrderService {
       const promises: Promise<any>[] = [
         this.orderRepository.update(
           order.id,
-          { status: OrderStatusEnum.Canceled },
+          { status: OrderStatusEnum.Canceled, info: 'Canceled by user' },
           transaction,
         ),
       ];
       if (order.action === OrderActionTypeEnum.Buy) {
         promises.push(
-          this.accountRepository.incrementReserved(
+          this.accountRepository.increment(
             order.userId,
+            null,
             order.orderType === OrderTypeEnum.Market
               ? -order.openPrice
               : -order.limit,

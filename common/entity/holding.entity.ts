@@ -24,10 +24,10 @@ export class HoldingEntity {
 
   @ApiProperty({
     type: Number,
-    description: 'Holding average purchase price',
+    description: 'Holding average price per unit',
     example: 127.89,
   })
-  averagePurchasePrice: number;
+  averagePrice: number;
 
   @ApiProperty({ type: Date, description: 'Holding created at' })
   createdAt: Date;

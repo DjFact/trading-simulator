@@ -14,7 +14,7 @@ import { RedisModule, RedisModuleOptions } from '@liaoliaots/nestjs-redis';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CommonConfigurationEnum } from './enum/common-configuration.enum';
 import { MicroserviceEnum } from './enum/microservice.enum';
-import { ClientProxyFactory, Transport } from '@nestjs/microservices';
+import { ClientProxyFactory, ClientsModule, Transport } from '@nestjs/microservices';
 import { RedisOptions } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { HttpModule } from '@nestjs/axios';

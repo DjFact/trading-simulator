@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { Console/marketWorkerModule } from './../src/console/market-worker.module';
+import { StopLossWorkerModule } from '../src/stop-loss-worker.module';
 
-describe('Console/marketWorkerController (e2e)', () => {
+describe('MarketWorkerController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [Console/marketWorkerModule],
+      imports: [StopLossWorkerModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();

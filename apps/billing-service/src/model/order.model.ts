@@ -76,13 +76,25 @@ export class Order extends Model {
   closePrice?: number;
 
   @Column({
+    allowNull: true,
+    type: DataType.FLOAT,
+  })
+  total?: number;
+
+  @Column({
     allowNull: false,
     type: DataType.STRING,
   })
   status: OrderStatusEnum;
 
+  @Column({
+    allowNull: true,
+    type: DataType.STRING,
+  })
+  info?: string;
+
   @Column({ type: DataType.DATE, allowNull: true })
-  closeTimestamp?: Date;
+  closedAt?: Date;
 
   @Column({ type: DataType.DATE })
   createdAt: Date;

@@ -12,7 +12,10 @@ import {
 } from 'sequelize-typescript';
 import { Account } from './account.model';
 
-@Table({ timestamps: true })
+@Table({
+  timestamps: true,
+  indexes: [{ fields: ['userId', 'assetSymbol'], unique: true }],
+})
 export class Holding extends Model {
   @ForeignKey(() => Account)
   @Column({
@@ -37,7 +40,7 @@ export class Holding extends Model {
     type: DataType.FLOAT,
     allowNull: false,
   })
-  averagePurchasePrice: number;
+  averagePrice: number;
 
   @BelongsTo(() => Account)
   account: Account;
