@@ -1,0 +1,32 @@
+server:
+  port: 3000
+
+redis:
+  host: 'localhost'
+  port: 6379
+
+app:
+  id: 'gateway'
+
+throttle:
+  ttl: 60
+  limit: 20
+
+winston:
+  console:
+    level: 'info'
+
+health:
+  memory:
+    heapMB: 1024
+    rssMB: 1024
+
+microservice:
+  timeout: 10000
+
+recaptcha:
+#  url: 'https://www.google.com/recaptcha/api/siteverify'
+#  projects:
+#    auth:
+#      secret: '6Ld1FuMnAAAAAErhmKHLd95C4uXi1tDERj35MI3h'
+#      score: 0.5

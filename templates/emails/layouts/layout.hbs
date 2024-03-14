@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter</title>
+</head>
+<style type="text/css">
+    .logo {
+        height: 6em;
+    }
+    .header-image {
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        width: 50em;
+        height: 10.66em;
+        background-size: 100% auto;
+    }
+    .content-image {
+        margin: 0;
+        padding: 0;
+        width: 50em;
+        height: 35em;
+        background-size: 79.5% auto;
+        text-align: center;
+    }
+    h2 {
+        margin-top: -5em;
+        font-family: Verdana;
+        font-weight: bold;
+        font-size: 1.25em;
+        color: #898989;
+    }
+    p {
+        font-family: Arial;
+        color: #000000;
+        margin-bottom: 3em;
+    }
+    #follow {
+        padding: 0.6em 5em;
+        width: 5em;
+        background: #4685F5;
+        border: none;
+        border-radius: 0.5em;
+        font-family: Verdana;
+        font-style: normal;
+        font-weight: bold;
+        font-size: 0.8em;
+        text-transform: uppercase;
+        color: #FFFFFF;
+        text-decoration: none;
+    }
+    #follow:hover {
+        box-shadow: 0 0 1.5em 0.4em #4685F5;
+    }
+</style>
+<body>
+<table style="margin-left: auto; margin-right: auto; border-spacing: 0;">
+    <tr>
+        <td class="header-image"></td>
+    </tr>
+    <tr>
+        <td class=content-image>
+            {{>(lookup . 'partialBody') partialParams}}
+        </td>
+    </tr>
+</table>
+</body>
+</html>

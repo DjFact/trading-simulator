@@ -1,0 +1,36 @@
+from: 'Trading System <viktorr.plotnikov@gmail.com>'
+redis:
+  host: 'localhost'
+  port: 6379
+
+throttle:
+  ttl: 60
+  limit: 20
+
+app:
+  name: 'Trading System'
+
+mail:
+  host: 'smtp.gmail.com'
+  port: 587
+  secure: false
+  tls: true
+  user: 'info@elkyc.com'
+  pass: 'qaoodywpaahycmkl'
+  from: '"Trading System No-Reply" <viktorr.plotnikov@gmail.com>'
+
+hbs:
+  layouts: 'templates/emails/layouts'
+  partials: 'templates/emails/partials'
+
+winston:
+  console:
+    level: 'info'
+
+health:
+  memory:
+    heapMB: 1024
+    rssMB: 1024
+  disk:
+    percentThreshold: 0.8
+    thresholdGB: 100
