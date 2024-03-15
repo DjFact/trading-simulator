@@ -8,8 +8,4 @@ export class UserDto {
   @IsNotEmpty()
   @IsUUID()
   userId: string;
-
-  constructor(id: string) {
-    this.userId = id;
-  }
 }

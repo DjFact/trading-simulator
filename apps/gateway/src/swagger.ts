@@ -5,9 +5,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { INestApplication } from '@nestjs/common';
 import { HealthModule } from './health/health.module';
 import { GatewayUserModule } from './user/gateway-user.module';
-import { GatewayModule } from './gateway.module';
 import { GatewayAuthOtpModule } from './auth/otp/gateway-auth-otp.module';
 import { GatewayAuthModule } from './auth/gateway-auth.module';
+import { GatewayBalanceModule } from './balance/gateway-balance.module';
+import { GatewayOrderModule } from './order/gateway-order.module';
 
 export class Swagger {
   constructor(private app: INestApplication) {}
@@ -26,7 +27,13 @@ export class Swagger {
       .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(this.app, options, {
-      include: [GatewayUserModule, GatewayAuthModule, GatewayAuthOtpModule],
+      include: [
+        GatewayUserModule,
+        GatewayAuthModule,
+        GatewayAuthOtpModule,
+        GatewayBalanceModule,
+        GatewayOrderModule,
+      ],
     });
     SwaggerModule.setup('swagger', this.app, document);
   }

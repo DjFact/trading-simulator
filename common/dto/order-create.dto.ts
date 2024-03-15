@@ -2,12 +2,11 @@
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
  * Date: 13/03/2024 20:13
  */
-import { UserDto } from './user.dto';
 import { OrderActionTypeEnum } from '../enum/order-action-type.enum';
 import { OrderTypeEnum } from '../enum/order-type.enum';
 import { IsEnum, IsInt, IsNumber, IsOptional, Length } from 'class-validator';
 
-export class OrderCreateDto extends UserDto {
+export class OrderCreateDto {
   @Length(2, 10)
   assetSymbol: string;
 

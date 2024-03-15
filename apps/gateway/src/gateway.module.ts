@@ -9,6 +9,8 @@ import { GatewayAuthModule } from './auth/gateway-auth.module';
 import { GatewayUserModule } from './user/gateway-user.module';
 import { AllExceptionsFilter } from '../../../common/filter/all.exception.filter';
 import { WsModule } from '../../../common/ws-server/ws.module';
+import { GatewayBalanceModule } from './balance/gateway-balance.module';
+import { GatewayOrderModule } from './order/gateway-order.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { WsModule } from '../../../common/ws-server/ws.module';
     getThrottlerModule(),
     GatewayAuthModule,
     GatewayUserModule,
+    GatewayBalanceModule,
+    GatewayOrderModule,
     WsModule,
     HealthModule,
   ],

@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 14.11.2022 00:55
  */
 import { applyDecorators, Type } from '@nestjs/common';
 import { ApiExtraModels, ApiResponse, getSchemaPath } from '@nestjs/swagger';

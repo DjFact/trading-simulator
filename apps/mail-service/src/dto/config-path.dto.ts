@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 30.09.2021 13:19
  */
 
 class PathDto {

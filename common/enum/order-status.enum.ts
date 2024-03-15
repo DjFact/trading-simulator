@@ -7,4 +7,5 @@ export enum OrderStatusEnum {
   Opened = 'opened',
   Closed = 'closed',
   Canceled = 'canceled',
+  Expired = 'expired',
 }

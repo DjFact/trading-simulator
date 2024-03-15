@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 15.04.2021 16:54
  */
 
 export enum MicroserviceEnum {

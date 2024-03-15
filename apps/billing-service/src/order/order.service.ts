@@ -2,9 +2,7 @@
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { UserDto } from '../../../../common/dto/user.dto';
 import { OrderCreateDto } from '../../../../common/dto/order-create.dto';
-import { OrderCancelDto } from '../../../../common/dto/order-cancel.dto';
 import { OrderRepository } from '../repository/order.repository';
 import { OrderEntity } from '../../../../common/entity/order.entity';
 import { Sequelize } from 'sequelize-typescript';
@@ -16,23 +14,33 @@ import { OrderStatusEnum } from '../../../../common/enum/order-status.enum';
 import { OrderActionTypeEnum } from '../../../../common/enum/order-action-type.enum';
 import { Transaction } from 'sequelize';
 import { AccountEntity } from '../../../../common/entity/balance.entity';
+import { MqService } from '../../../../common/mq/mq.service';
+import { QueueNameEnum } from '../../../../common/enum/queue-name.enum';
+import { OrderFilterDto } from '../../../../common/dto/order-filter.dto';
+import { TotalDataEntity } from '../../../../common/entity/total-data.entity';
+import { OrderDto } from '../../../../common/dto/order.dto';
 
 @Injectable()
 export class OrderService {
   constructor(
     private readonly sequelize: Sequelize,
+    private readonly mqService: MqService,
     private readonly accountRepository: AccountRepository,
     private readonly orderRepository: OrderRepository,
     private readonly logger: Logger,
   ) {}
 
-  async getOrders({ userId }: UserDto): Promise<OrderEntity[]> {
-    const orders = await this.orderRepository.findAllByUserId(userId);
-    if (!orders) {
-      return [];
-    }
+  async getOrders(
+    userId: string,
+    filter: OrderFilterDto,
+  ): Promise<TotalDataEntity<OrderEntity[]>> {
+    const { rows, count } = await this.orderRepository.findAllByUserId(
+      userId,
+      filter,
+    );
 
-    return orders.map((order) => new OrderEntity(order));
+    const data = rows.map((order) => new OrderEntity(order));
+    return new TotalDataEntity(data, count);
   }
 
   async getAccountAndCheckFunds(
@@ -80,7 +88,10 @@ export class OrderService {
     return new AccountEntity(account);
   }
 
-  async createOrder(orderDto: OrderCreateDto): Promise<OrderEntity> {
+  async createOrder(
+    userId: string,
+    orderDto: OrderCreateDto,
+  ): Promise<OrderEntity> {
     if (orderDto.orderType !== OrderTypeEnum.Market && !orderDto.limit) {
       throw new BillingException(
         'Limit price not set',
@@ -109,7 +120,7 @@ export class OrderService {
       if (orderDto.action === OrderActionTypeEnum.Buy) {
         promises.push(
           this.accountRepository.increment(
-            orderDto.userId,
+            userId,
             null,
             orderDto.orderType === OrderTypeEnum.Market
               ? openPrice
@@ -121,7 +132,10 @@ export class OrderService {
       const [order] = await Promise.all(promises);
       await transaction.commit();
 
-      return new OrderEntity(order);
+      const orderEntity = new OrderEntity(order);
+      await this.sendOrderToQueue(orderEntity);
+
+      return orderEntity;
     } catch (e) {
       await transaction.rollback();
       this.logger.error(e);
@@ -132,13 +146,10 @@ export class OrderService {
     }
   }
 
-  async cancelOrder(orderDto: OrderCancelDto): Promise<OrderEntity> {
+  async cancelOrder(userId: string, orderId: string): Promise<OrderEntity> {
     const transaction = await this.sequelize.transaction();
-    const order = await this.orderRepository.findById(
-      orderDto.orderId,
-      transaction,
-    );
-    if (!order || order.userId !== orderDto.userId) {
+    const order = await this.orderRepository.findById(orderId, transaction);
+    if (!order || order.userId !== userId) {
       throw new BillingException(
         'Order not found',
         ExceptionCodeEnum.OrderNotFound,
@@ -194,5 +205,32 @@ export class OrderService {
         ExceptionCodeEnum.OrderCancelError,
       );
     }
+  }
+
+  private async sendOrderToQueue(order: OrderEntity): Promise<void> {
+    let queueName: QueueNameEnum;
+    switch (order.orderType) {
+      case OrderTypeEnum.Market:
+        queueName = QueueNameEnum.MarketOrders;
+        break;
+      case OrderTypeEnum.Limit:
+        queueName = QueueNameEnum.LimitOrders;
+        break;
+      case OrderTypeEnum.StopLoss:
+        queueName = QueueNameEnum.StopLossOrders;
+        break;
+      default:
+        throw new BillingException(
+          'Unknown order type',
+          ExceptionCodeEnum.OrderTypeUnknown,
+        );
+    }
+
+    await this.mqService.sendToQueue(
+      queueName as string,
+      {
+        orderId: order.id,
+      } as OrderDto,
+    );
   }
 }

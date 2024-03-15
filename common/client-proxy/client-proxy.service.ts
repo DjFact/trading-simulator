@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 16.04.2021 22:55
  */
 
 import { Injectable } from '@nestjs/common';

@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 16.04.2021 20:00
  */
 import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';

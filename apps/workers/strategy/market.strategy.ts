@@ -4,7 +4,7 @@
  */
 import { IStrategy } from './strategy.interface';
 import { BaseStrategy } from './base.strategy';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OrderEntity } from '../../../common/entity/order.entity';
 import { OrderActionTypeEnum } from '../../../common/enum/order-action-type.enum';
 import { OrderStatusEnum } from '../../../common/enum/order-status.enum';
@@ -12,11 +12,37 @@ import { HoldingEntity } from '../../../common/entity/holding.entity';
 import { StrategyException } from '../../../common/exception/strategy.exception';
 import { ExceptionCodeEnum } from '../../../common/enum/exception-code.enum';
 import { Transaction } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import { OrderService } from '../../billing-service/src/order/order.service';
+import { AccountRepository } from '../../billing-service/src/repository/account.repository';
+import { HoldingRepository } from '../../billing-service/src/repository/holding.repository';
+import { OrderRepository } from '../../billing-service/src/repository/order.repository';
 
 @Injectable()
 export class MarketStrategy extends BaseStrategy implements IStrategy {
-  async processOrder(order: OrderEntity, closePrice: number): Promise<void> {
-    const transaction = await this.sequelize.transaction();
+  constructor(
+    sequelize: Sequelize,
+    orderService: OrderService,
+    accountRepository: AccountRepository,
+    holdingRepository: HoldingRepository,
+    orderRepository: OrderRepository,
+    logger: Logger,
+  ) {
+    super(
+      sequelize,
+      orderService,
+      accountRepository,
+      holdingRepository,
+      orderRepository,
+      logger,
+    );
+  }
+
+  async processOrder(
+    order: OrderEntity,
+    closePrice: number,
+    transaction: Transaction,
+  ): Promise<void> {
     /** Check if account has enough funds */
     const account = await this.orderService.getAccountAndCheckFunds(
       order,
@@ -58,10 +84,7 @@ export class MarketStrategy extends BaseStrategy implements IStrategy {
       );
 
       await Promise.all(promises);
-
-      await transaction.commit();
     } catch (e) {
-      await transaction.rollback();
       this.logger.error(e, order);
 
       throw new StrategyException(

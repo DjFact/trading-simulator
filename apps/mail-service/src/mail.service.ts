@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 13.12.2020 10:56
  */
 import { InjectQueue } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';

@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 17.03.2021 13:08
  */
 import {
   CallHandler,
@@ -12,8 +11,8 @@ import { catchError } from 'rxjs/operators';
 import { ResponseInterceptor } from './response.interceptor';
 import { ResponseErrorEntity } from '../entity/response-error.entity';
 import { Observable, of } from 'rxjs';
-import { GatewayException } from '../../gateway/exception/gateway.exception';
-import { GatewayEventEnum } from '../../gateway/enum/gateway-event.enum';
+import { GatewayException } from '../exception/gateway.exception';
+import { GatewayEventEnum } from '../enum/gateway-event.enum';
 
 @Injectable()
 export class WsResponseInterceptor extends ResponseInterceptor {

@@ -24,7 +24,7 @@ export class BalanceController {
   }
 
   @MessagePattern({ cmd: BillingCommandEnum.TopUpDeposit })
-  topUpDeposit(@Payload() topUp: TopUpDto): Promise<AccountEntity> {
+  topUpDeposit(@Payload() topUp: TopUpDto & UserDto): Promise<AccountEntity> {
     return this.balanceService.topUpDeposit(topUp);
   }
 }

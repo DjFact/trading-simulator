@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 08.11.2022 17:04
  */
 import { ApiProperty } from '@nestjs/swagger';
 

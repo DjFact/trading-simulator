@@ -38,9 +38,13 @@ export class MqService {
       });
     }
 
-    await this.publishChannel.sendToQueue(queueName, data, {
-      persistent: true,
-    });
+    await this.publishChannel.sendToQueue(
+      queueName,
+      Buffer.from(JSON.stringify(data)),
+      {
+        persistent: true,
+      },
+    );
   }
 
   consumeMessages(
@@ -52,13 +56,16 @@ export class MqService {
         await channel.assertQueue(queueName, { durable: true });
         this.subDeclared.add(queueName);
       }
+      this.logger.log(`Consume messages from ${queueName}`);
       await channel.consume(
         queueName,
         (msg: ConsumeMessage) => {
-          this.logger.debug(
-            `Received message from ${queueName}: ${msg.content.toString()}`,
-          );
-          onMessage(msg, this.subscribeChannel);
+          if (!msg) {
+            return;
+          }
+          const content = JSON.parse(msg.content.toString());
+          this.logger.log(`Received message from ${queueName}: ${content}`);
+          onMessage(content, this.subscribeChannel);
         },
         { noAck: false },
       );

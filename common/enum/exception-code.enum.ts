@@ -25,6 +25,8 @@ export enum ExceptionCodeEnum {
   HoldingNotFound = 3005,
   OrderAlreadyClosed = 3006,
   OrderCancelError = 3007,
+  OrderTypeUnknown = 3008,
+  OrderExpired = 3009,
 
   AuthError = 4001,
   AlreadyVerified = 4004,

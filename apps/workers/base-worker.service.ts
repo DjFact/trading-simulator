@@ -10,8 +10,10 @@ import { MqService } from '../../common/mq/mq.service';
 import { OrderTypeEnum } from '../../common/enum/order-type.enum';
 import { ConsumeMessage } from 'amqplib';
 import { ChannelWrapper } from 'amqp-connection-manager';
-import { OrderEntity } from '../../common/entity/order.entity';
 import { StrategyException } from '../../common/exception/strategy.exception';
+import { OrderDto } from '../../common/dto/order.dto';
+import { BillingException } from '../../common/exception/billing.exception';
+import { ExceptionCodeEnum } from '../../common/enum/exception-code.enum';
 
 export abstract class BaseWorkerService implements OnModuleInit {
   protected readonly strategy: BaseStrategy;
@@ -37,12 +39,22 @@ export abstract class BaseWorkerService implements OnModuleInit {
     msg: ConsumeMessage,
     channel: ChannelWrapper,
   ) {
+    const { orderId }: OrderDto = JSON.parse(msg.content.toString());
+
+    /** todo: get close price from market */
+    const closePrice = 100;
+    const transaction = await this.strategy.createTransaction();
+
     try {
-      const order: OrderEntity = JSON.parse(msg.content.toString());
-      /** todo: get close price from market */
-      const closePrice = 100;
-      await this.strategy.processOrder(order, closePrice);
+      const order = await this.strategy.getOrderById(orderId, transaction);
+      await this.strategy.processOrder(order, closePrice, transaction);
+
+      await transaction.commit();
     } catch (e) {
+      if (e?.code !== ExceptionCodeEnum.OrderExpired) {
+        await transaction.rollback();
+      }
+
       if (e instanceof StrategyException) {
         const { queueName } = this.getWorkerConfig();
         await this.mqService.sendToQueue(

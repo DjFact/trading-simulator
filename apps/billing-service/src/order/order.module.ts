@@ -7,9 +7,10 @@ import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 import { OrderRepository } from '../repository/order.repository';
 import { AccountRepository } from '../repository/account.repository';
+import { MqModule } from '../../../../common/mq/mq.module';
 
 @Module({
-  imports: [SequelizeModule.forFeature([Account, Holding, Order])],
+  imports: [SequelizeModule.forFeature([Account, Holding, Order]), MqModule],
   controllers: [OrderController],
   providers: [OrderService, OrderRepository, AccountRepository, Logger],
 })

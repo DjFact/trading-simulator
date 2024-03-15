@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 26.04.2022 19:54
  */
 import Redis, { Cluster } from 'ioredis';
 import * as yaml from 'js-yaml';

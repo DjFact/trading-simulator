@@ -1,6 +1,5 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
- * Date: 03.11.2022 23:37
  */
 import { Store, Cache } from 'cache-manager';
 
