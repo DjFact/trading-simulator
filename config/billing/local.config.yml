@@ -1,0 +1,26 @@
+db:
+  host: 'localhost'
+  port: 5432
+  username: 'postgres'
+  password: 'postgres'
+  database: 'loyalty'
+
+redis:
+  host: 'localhost'
+  port: 6379
+
+throttle:
+  ttl: 60
+  limit: 20
+
+winston:
+  console:
+    level: 'info'
+
+health:
+  memory:
+    heapMB: 1024
+    rssMB: 1024
+
+microservice:
+  timeout: 10000

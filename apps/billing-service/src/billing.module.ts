@@ -10,6 +10,7 @@ import { HealthModule } from '../../auth-service/src/health/health.module';
 import { ErrorMicroserviceInterceptor } from '../../../common/interfceptor/error-microservice.interceptor';
 import { MicroserviceAllExceptionFilter } from '../../../common/filter/microservice-all.exception.filter';
 import { BalanceModule } from './balance/balance.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { BalanceModule } from './balance/balance.module';
     getWinstonLoggerModule(),
     getThrottlerModule(),
     BalanceModule,
+    OrderModule,
     HealthModule,
   ],
   providers: [
