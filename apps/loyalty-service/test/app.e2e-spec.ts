@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { LoyaltyServiceModule } from './../src/loyalty-service.module';
+import { LoyaltyModule } from '../src/loyalty.module';
 
 describe('LoyaltyServiceController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [LoyaltyServiceModule],
+      imports: [LoyaltyModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();

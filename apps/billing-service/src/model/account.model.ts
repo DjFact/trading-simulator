@@ -15,10 +15,7 @@ import { Holding } from './holding.model';
 @Table({ timestamps: true })
 export class Account extends Model {
   @PrimaryKey
-  @Column({
-    allowNull: false,
-    type: DataType.UUID,
-  })
+  @Column({ allowNull: false, type: DataType.UUID })
   userId: string;
 
   @Column({ type: DataType.DECIMAL(20, 8), defaultValue: 0 })
@@ -28,7 +25,7 @@ export class Account extends Model {
   reserved: number;
 
   @HasMany(() => Holding)
-  holdings: Holding[];
+  holdings?: Holding[];
 
   @Column({ type: DataType.DATE })
   createdAt: Date;

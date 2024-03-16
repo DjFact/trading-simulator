@@ -17,80 +17,50 @@ import { OrderTypeEnum } from '../../../../common/enum/order-type.enum';
 import { OrderActionTypeEnum } from '../../../../common/enum/order-action-type.enum';
 import { v4 as uuidv4 } from 'uuid';
 
-@Table({ timestamps: true })
+@Table({
+  timestamps: true,
+  indexes: [
+    { fields: ['userId', { name: 'createdAt', order: 'DESC' }] },
+    { fields: ['userId', 'status', { name: 'createdAt', order: 'DESC' }] },
+  ],
+})
 export class Order extends Model {
   @PrimaryKey
-  @Column({
-    allowNull: false,
-    type: DataType.UUID,
-  })
+  @Column({ allowNull: false, type: DataType.UUID })
   id: string;
 
   @ForeignKey(() => Account)
-  @Column({
-    allowNull: false,
-    type: DataType.UUID,
-  })
+  @Column({ allowNull: false, type: DataType.UUID })
   userId: string;
 
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
+  @Column({ type: DataType.STRING, allowNull: false })
   assetSymbol: string;
 
-  @Column({
-    allowNull: false,
-    type: DataType.INTEGER,
-  })
+  @Column({ allowNull: false, type: DataType.INTEGER })
   quantity: number;
 
-  @Column({
-    allowNull: false,
-    type: DataType.STRING,
-  })
+  @Column({ allowNull: false, type: DataType.STRING })
   action: OrderActionTypeEnum;
 
-  @Column({
-    allowNull: false,
-    type: DataType.STRING,
-  })
+  @Column({ allowNull: false, type: DataType.STRING })
   orderType: OrderTypeEnum;
 
-  @Column({
-    allowNull: true,
-    type: DataType.FLOAT,
-  })
+  @Column({ allowNull: true, type: DataType.FLOAT })
   limit?: number;
 
-  @Column({
-    allowNull: false,
-    type: DataType.FLOAT,
-  })
+  @Column({ allowNull: false, type: DataType.FLOAT })
   openPrice: number;
 
-  @Column({
-    allowNull: true,
-    type: DataType.FLOAT,
-  })
+  @Column({ allowNull: true, type: DataType.FLOAT })
   closePrice?: number;
 
-  @Column({
-    allowNull: true,
-    type: DataType.FLOAT,
-  })
+  @Column({ allowNull: true, type: DataType.FLOAT })
   total?: number;
 
-  @Column({
-    allowNull: false,
-    type: DataType.STRING,
-  })
+  @Column({ allowNull: false, type: DataType.STRING })
   status: OrderStatusEnum;
 
-  @Column({
-    allowNull: true,
-    type: DataType.STRING,
-  })
+  @Column({ allowNull: true, type: DataType.STRING })
   info?: string;
 
   @Column({ type: DataType.DATE, allowNull: true })

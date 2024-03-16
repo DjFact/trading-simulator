@@ -18,32 +18,20 @@ import { Account } from './account.model';
 })
 export class Holding extends Model {
   @ForeignKey(() => Account)
-  @Column({
-    allowNull: false,
-    type: DataType.UUID,
-  })
+  @Column({ allowNull: false, type: DataType.UUID })
   userId: string;
 
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
+  @Column({ type: DataType.STRING, allowNull: false })
   assetSymbol: string;
 
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
-  })
+  @Column({ type: DataType.INTEGER, allowNull: false })
   quantity: number;
 
-  @Column({
-    type: DataType.FLOAT,
-    allowNull: false,
-  })
+  @Column({ type: DataType.FLOAT, allowNull: false })
   averagePrice: number;
 
   @BelongsTo(() => Account)
-  account: Account;
+  account?: Account;
 
   @Column({ type: DataType.DATE })
   createdAt: Date;
