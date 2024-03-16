@@ -11,6 +11,7 @@
     "start": "NODE_ENV=local nest start --watch",
     "start:auth": "NODE_ENV=local nest start auth-service --watch",
     "start:billing": "NODE_ENV=local nest start billing-service --watch",
+    "start:loyalty": "NODE_ENV=local nest start loyalty-service --watch",
     "start:mail": "NODE_ENV=local nest start mail-service --watch",
     "start:market": "NODE_ENV=local nest start market-worker --watch",
     "start:debug": "nest start --debug --watch",
