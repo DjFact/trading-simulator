@@ -36,7 +36,7 @@ export class AccountEntity {
       if (null === value) {
         return null;
       }
-      return value.map((holding) => new HoldingEntity(holding));
+      return value.map((holding: any) => new HoldingEntity(holding));
     },
     {
       toClassOnly: true,

@@ -9,9 +9,6 @@ export enum ExceptionCodeEnum {
   UserAdminConfigNotFound = 1013,
   UserCreationError = 1016,
   UserNotUpdated = 1017,
-  UserRestoreNotFound = 1018,
-  UserRestoreExpired = 1019,
-  UserDestroyingError = 1020,
 
   BalanceNotFound = 2000,
   AccountCreationError = 2001,
@@ -36,6 +33,18 @@ export enum ExceptionCodeEnum {
   StrategyProcessingError = 5001,
 
   UnknownClientType = 6009,
+
+  LoyaltyStatusNotFound = 7000,
+  LoyaltyStatusAlreadyExists = 7001,
+  LoyaltyPrizeNotFound = 7002,
+  UserLoyaltyStatusNotFound = 7003,
+  LoyaltyPrizeCountryNotAvailable = 7004,
+  LoyaltyNotEnoughPrizePoints = 7005,
+  LoyaltyPrizeOrderNotCreated = 7006,
+  LoyaltyPrizePointsNotDeducted = 7007,
+  UserLoyaltyStatusNotUpdated = 7008,
+  TradeTimeNotEnough = 7009,
+  PricePointsNotEnough = 7010,
 
   SendMailError = 8000,
   OneTimePasswordAlreadySent = 8001,

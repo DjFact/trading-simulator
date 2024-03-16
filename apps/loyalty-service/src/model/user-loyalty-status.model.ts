@@ -7,22 +7,24 @@ import {
   Column,
   DataType,
   ForeignKey,
+  HasMany,
   Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { LoyaltyStatusEnum } from '../../../../common/enum/loyalty.enum';
-import { Status } from './status.model';
+import { LoyaltyStatus } from './loyalty-status.model';
+import { UserLoyaltyPrizePoint } from './user-loyalty-prize-point.model';
+import { UserLoyaltyOrder } from './user-loyalty-order.model';
 
 @Table({ timestamps: true })
-export class UserStatus extends Model {
+export class UserLoyaltyStatus extends Model {
   @PrimaryKey
   @Column({ type: DataType.UUID, allowNull: false })
   userId: string;
 
-  @ForeignKey(() => Status)
+  @ForeignKey(() => LoyaltyStatus)
   @Column({ type: DataType.STRING, allowNull: false })
-  status: LoyaltyStatusEnum;
+  status: string;
 
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
   points: number;
@@ -33,6 +35,12 @@ export class UserStatus extends Model {
   @Column({ type: DataType.DATE })
   updatedAt: Date;
 
-  @BelongsTo(() => Status)
-  loyalty?: Status;
+  @BelongsTo(() => LoyaltyStatus)
+  loyalty?: LoyaltyStatus;
+
+  @HasMany(() => UserLoyaltyPrizePoint)
+  prizePoints?: UserLoyaltyPrizePoint[];
+
+  @HasMany(() => UserLoyaltyOrder)
+  prizeOrders?: UserLoyaltyOrder[];
 }

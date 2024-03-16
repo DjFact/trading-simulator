@@ -12,6 +12,13 @@ import { OrderFilterDto } from '../../../../common/dto/order-filter.dto';
 export class OrderRepository implements IOrderRepository {
   constructor(@InjectModel(Order) private readonly orderModel: typeof Order) {}
 
+  async findLastByUserId(userId: string): Promise<Order | null> {
+    return this.orderModel.findOne({
+      where: { userId },
+      order: [['createdAt', 'DESC']],
+    });
+  }
+
   async findById(id: string, transaction?: Transaction): Promise<Order> {
     return this.orderModel.findByPk(id, { transaction });
   }

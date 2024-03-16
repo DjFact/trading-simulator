@@ -3,6 +3,7 @@
  * Date: 16/03/2024 00:06
  */
 import {
+  BeforeCreate,
   BelongsTo,
   Column,
   DataType,
@@ -11,16 +12,22 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { Prize } from './prize.model';
+import { LoyaltyPrize } from './loyalty-prize.model';
 import { OrderStatusEnum } from '../../../../common/enum/order-status.enum';
+import { v4 as uuidv4 } from 'uuid';
+import { UserLoyaltyStatus } from './user-loyalty-status.model';
 
 @Table({ timestamps: true })
-export class UserOrder extends Model {
+export class UserLoyaltyOrder extends Model {
   @PrimaryKey
+  @Column({ allowNull: false, type: DataType.UUID })
+  id: string;
+
+  @ForeignKey(() => UserLoyaltyStatus)
   @Column({ type: DataType.UUID, allowNull: false })
   userId: string;
 
-  @ForeignKey(() => Prize)
+  @ForeignKey(() => LoyaltyPrize)
   @Column({ type: DataType.INTEGER, allowNull: false })
   prizeId: number;
 
@@ -33,6 +40,11 @@ export class UserOrder extends Model {
   @Column({ type: DataType.DATE })
   updatedAt: Date;
 
-  @BelongsTo(() => Prize)
-  prize?: Prize;
+  @BelongsTo(() => LoyaltyPrize)
+  prize?: LoyaltyPrize;
+
+  @BeforeCreate
+  static async generateId(instance: UserLoyaltyOrder): Promise<void> {
+    instance.id = uuidv4();
+  }
 }

@@ -17,6 +17,7 @@ import { OrderService } from '../../billing-service/src/order/order.service';
 import { AccountRepository } from '../../billing-service/src/repository/account.repository';
 import { HoldingRepository } from '../../billing-service/src/repository/holding.repository';
 import { OrderRepository } from '../../billing-service/src/repository/order.repository';
+import { toFixed2Number } from '../../../common/numbers.helper';
 
 @Injectable()
 export class MarketStrategy extends BaseStrategy implements IStrategy {
@@ -42,7 +43,7 @@ export class MarketStrategy extends BaseStrategy implements IStrategy {
     order: OrderEntity,
     closePrice: number,
     transaction: Transaction,
-  ): Promise<void> {
+  ): Promise<OrderEntity> {
     /** Check if account has enough funds */
     const account = await this.orderService.getAccountAndCheckFunds(
       order,
@@ -53,9 +54,7 @@ export class MarketStrategy extends BaseStrategy implements IStrategy {
       (h) => h.assetSymbol === order.assetSymbol,
     );
 
-    const total =
-      Math.round((closePrice * order.quantity + Number.EPSILON) * 100) / 100;
-
+    const total = toFixed2Number(closePrice * order.quantity);
     try {
       let promises: Promise<any>[];
       if (order.action === OrderActionTypeEnum.Buy) {
@@ -70,7 +69,7 @@ export class MarketStrategy extends BaseStrategy implements IStrategy {
         promises = this.processSellOrder(order, holding, total, transaction);
       }
 
-      promises.push(
+      promises.unshift(
         this.orderRepository.update(
           order.id,
           {
@@ -83,7 +82,8 @@ export class MarketStrategy extends BaseStrategy implements IStrategy {
         ),
       );
 
-      await Promise.all(promises);
+      const [updatedOrder] = await Promise.all(promises);
+      return new OrderEntity(updatedOrder);
     } catch (e) {
       this.logger.error(e, order);
 

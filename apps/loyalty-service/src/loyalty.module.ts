@@ -1,7 +1,7 @@
 import { Logger, Module } from '@nestjs/common';
-import { StatusModule } from './status/status.module';
-import { PrizeModule } from './prize/prize.module';
-import { UserStatusModule } from './user-status/user-status.module';
+import { LoyaltyStatusModule } from './status/loyalty-status.module';
+import { LoyaltyPrizeModule } from './prize/loyalty-prize.module';
+import { UserLoyaltyStatusModule } from './user-status/user-loyalty-status.module';
 import { ErrorMicroserviceInterceptor } from '../../../common/interfceptor/error-microservice.interceptor';
 import { MicroserviceAllExceptionFilter } from '../../../common/filter/microservice-all.exception.filter';
 import {
@@ -12,6 +12,7 @@ import {
 } from '../../../common/module.utils';
 import { MicroserviceEnum } from '../../../common/enum/microservice.enum';
 import { HealthModule } from './health/health.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -19,9 +20,10 @@ import { HealthModule } from './health/health.module';
     getSequelizeModuleRoot(),
     getWinstonLoggerModule(),
     getThrottlerModule(),
-    StatusModule,
-    PrizeModule,
-    UserStatusModule,
+    ScheduleModule.forRoot(),
+    LoyaltyStatusModule,
+    LoyaltyPrizeModule,
+    UserLoyaltyStatusModule,
     HealthModule,
   ],
   providers: [

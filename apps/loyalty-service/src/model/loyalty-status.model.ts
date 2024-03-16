@@ -6,23 +6,25 @@ import {
   Column,
   DataType,
   HasMany,
+  Index,
   Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
 import { LoyaltyStatusEnum } from '../../../../common/enum/loyalty.enum';
-import { Prize } from './prize.model';
+import { LoyaltyPrize } from './loyalty-prize.model';
 
 @Table({ timestamps: true })
-export class Status extends Model {
+export class LoyaltyStatus extends Model {
   @PrimaryKey
   @Column({
     type: DataType.CHAR(255),
     allowNull: false,
     defaultValue: LoyaltyStatusEnum.Executive,
   })
-  name: LoyaltyStatusEnum;
+  name: string;
 
+  @Index
   @Column({ type: DataType.INTEGER, allowNull: false, defaultValue: 0 })
   points: number;
 
@@ -32,9 +34,8 @@ export class Status extends Model {
   @Column({ type: DataType.FLOAT, allowNull: false, defaultValue: 0 })
   prizeCoef: number;
 
-  /** Inactivity in days */
   @Column({ type: DataType.SMALLINT, allowNull: false, defaultValue: 0 })
-  expiresAfter: number;
+  expiresAfterDays: number;
 
   @Column({ type: DataType.INTEGER, allowNull: true })
   pricePoints?: number;
@@ -49,6 +50,6 @@ export class Status extends Model {
   @Column({ type: DataType.DATE })
   updatedAt: Date;
 
-  @HasMany(() => Prize)
-  prizes?: Prize[];
+  @HasMany(() => LoyaltyPrize)
+  prizes?: LoyaltyPrize[];
 }

@@ -30,6 +30,16 @@ export class OrderService {
     private readonly logger: Logger,
   ) {}
 
+  async getInactiveDays(userId: string): Promise<number> {
+    const order = await this.orderRepository.findLastByUserId(userId);
+    if (!order) {
+      return -1;
+    }
+    return Math.floor(
+      (Date.now() - order.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+    );
+  }
+
   async getOrders(
     userId: string,
     filter: OrderFilterDto,

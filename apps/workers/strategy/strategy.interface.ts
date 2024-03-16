@@ -10,5 +10,5 @@ export interface IStrategy {
     order: OrderEntity,
     closePrice: number,
     transaction: Transaction,
-  ): Promise<void>;
+  ): Promise<OrderEntity>;
 }

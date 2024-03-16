@@ -12,4 +12,5 @@ export class BillingCommandEnum {
   static GetOrders = generateCommandName('getOrders');
   static CreateOrder = generateCommandName('createOrder');
   static CancelOrder = generateCommandName('cancelOrder');
+  static GetInactiveDays = generateCommandName('getInactiveDays');
 }

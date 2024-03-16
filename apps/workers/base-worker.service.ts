@@ -12,8 +12,8 @@ import { ConsumeMessage } from 'amqplib';
 import { ChannelWrapper } from 'amqp-connection-manager';
 import { StrategyException } from '../../common/exception/strategy.exception';
 import { OrderDto } from '../../common/dto/order.dto';
-import { BillingException } from '../../common/exception/billing.exception';
 import { ExceptionCodeEnum } from '../../common/enum/exception-code.enum';
+import { instanceToPlain } from 'class-transformer';
 
 export abstract class BaseWorkerService implements OnModuleInit {
   protected readonly strategy: BaseStrategy;
@@ -38,18 +38,31 @@ export abstract class BaseWorkerService implements OnModuleInit {
   protected async processOrderFromQueue(
     msg: ConsumeMessage,
     channel: ChannelWrapper,
-  ) {
-    const { orderId }: OrderDto = JSON.parse(msg.content.toString());
+  ): Promise<void> {
+    const orderDto: OrderDto = JSON.parse(msg.content.toString());
 
     /** todo: get close price from market */
     const closePrice = 100;
     const transaction = await this.strategy.createTransaction();
 
     try {
-      const order = await this.strategy.getOrderById(orderId, transaction);
-      await this.strategy.processOrder(order, closePrice, transaction);
+      const order = await this.strategy.getOrderById(
+        orderDto.orderId,
+        transaction,
+      );
+
+      const processedOrder = await this.strategy.processOrder(
+        order,
+        closePrice,
+        transaction,
+      );
 
       await transaction.commit();
+
+      await this.mqService.sendToQueue(
+        QueueNameEnum.RecalculateLoyalty,
+        instanceToPlain(processedOrder),
+      );
     } catch (e) {
       if (e?.code !== ExceptionCodeEnum.OrderExpired) {
         await transaction.rollback();
@@ -57,10 +70,7 @@ export abstract class BaseWorkerService implements OnModuleInit {
 
       if (e instanceof StrategyException) {
         const { queueName } = this.getWorkerConfig();
-        await this.mqService.sendToQueue(
-          queueName as string,
-          msg.content.toString(),
-        );
+        await this.mqService.sendToQueue(queueName as string, orderDto);
       } else {
         this.logger.error(e);
       }

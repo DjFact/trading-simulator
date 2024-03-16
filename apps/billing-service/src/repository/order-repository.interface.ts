@@ -6,6 +6,8 @@ import { Transaction } from 'sequelize';
 import { OrderFilterDto } from '../../../../common/dto/order-filter.dto';
 
 export interface IOrderRepository {
+  findLastByUserId(userId: string): Promise<Order | null>;
+
   findById(id: string, transaction?: Transaction): Promise<Order>;
 
   findAllByUserId(

@@ -11,6 +11,9 @@ import { AllExceptionsFilter } from '../../../common/filter/all.exception.filter
 import { WsModule } from '../../../common/ws-server/ws.module';
 import { GatewayBalanceModule } from './balance/gateway-balance.module';
 import { GatewayOrderModule } from './order/gateway-order.module';
+import { GatewayLoyaltyStatusModule } from './loyalty/status/gateway-loyalty-status.module';
+import { GatewayLoyaltyPrizeModule } from './loyalty/prize/gateway-loyalty-prize.module';
+import { GatewayLoyaltyUserStatusModule } from './loyalty/user-status/gateway-loyalty-user-status.module';
 
 @Module({
   imports: [
@@ -21,6 +24,9 @@ import { GatewayOrderModule } from './order/gateway-order.module';
     GatewayUserModule,
     GatewayBalanceModule,
     GatewayOrderModule,
+    GatewayLoyaltyStatusModule,
+    GatewayLoyaltyPrizeModule,
+    GatewayLoyaltyUserStatusModule,
     WsModule,
     HealthModule,
   ],

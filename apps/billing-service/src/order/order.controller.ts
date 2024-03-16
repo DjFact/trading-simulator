@@ -36,4 +36,9 @@ export class OrderController {
   ): Promise<OrderEntity> {
     return this.orderService.cancelOrder(userId, orderId);
   }
+
+  @MessagePattern({ cmd: BillingCommandEnum.GetInactiveDays })
+  getInactiveDays(@Payload() { userId }: UserDto): Promise<number> {
+    return this.orderService.getInactiveDays(userId);
+  }
 }

@@ -9,6 +9,9 @@ import { GatewayAuthOtpModule } from './auth/otp/gateway-auth-otp.module';
 import { GatewayAuthModule } from './auth/gateway-auth.module';
 import { GatewayBalanceModule } from './balance/gateway-balance.module';
 import { GatewayOrderModule } from './order/gateway-order.module';
+import { GatewayLoyaltyPrizeModule } from './loyalty/prize/gateway-loyalty-prize.module';
+import { GatewayLoyaltyStatusModule } from './loyalty/status/gateway-loyalty-status.module';
+import { GatewayLoyaltyUserStatusModule } from './loyalty/user-status/gateway-loyalty-user-status.module';
 
 export class Swagger {
   constructor(private app: INestApplication) {}
@@ -33,6 +36,9 @@ export class Swagger {
         GatewayAuthOtpModule,
         GatewayBalanceModule,
         GatewayOrderModule,
+        GatewayLoyaltyStatusModule,
+        GatewayLoyaltyPrizeModule,
+        GatewayLoyaltyUserStatusModule,
       ],
     });
     SwaggerModule.setup('swagger', this.app, document);

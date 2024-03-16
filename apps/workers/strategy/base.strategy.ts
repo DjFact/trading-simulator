@@ -29,7 +29,7 @@ export abstract class BaseStrategy implements IStrategy {
     order: OrderEntity,
     price: number,
     transaction: Transaction,
-  ): Promise<void>;
+  ): Promise<OrderEntity>;
 
   createTransaction(): Promise<Transaction> {
     return this.sequelize.transaction();

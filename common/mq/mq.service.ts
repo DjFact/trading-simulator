@@ -30,7 +30,7 @@ export class MqService {
     this.subscribeChannel = this.createChannel();
   }
 
-  async sendToQueue(queueName: string, data: any) {
+  async sendToQueue(queueName: string, data: object) {
     if (!this.pubDeclared.has(queueName)) {
       await this.publishChannel.addSetup((channel: Channel) => {
         channel.assertQueue(queueName, { durable: true });

@@ -5,17 +5,26 @@
 import {
   Column,
   DataType,
+  ForeignKey,
   Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
+import { UserLoyaltyStatus } from './user-loyalty-status.model';
 
 @Table({
   timestamps: true,
-  indexes: [{ fields: ['userId', { name: 'createdAt', order: 'ASC' }] }],
+  indexes: [
+    { fields: ['userId', 'orderId'], unique: true },
+    { fields: ['userId', { name: 'createdAt', order: 'ASC' }] },
+  ],
 })
-export class UserPrizePoint extends Model {
+export class UserLoyaltyPrizePoint extends Model {
   @PrimaryKey
+  @Column({ autoIncrement: true })
+  id: number;
+
+  @ForeignKey(() => UserLoyaltyStatus)
   @Column({ type: DataType.UUID, allowNull: false })
   userId: string;
 

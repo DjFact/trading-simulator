@@ -4,15 +4,12 @@ import {
   Controller,
   Get,
   Post,
-  Put,
-  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { GatewayBalanceService } from './gateway-balance.service';
 import { ResponseInterceptor } from '../../../../common/interfceptor/response.interceptor';
-import { UpdateUserDto } from '../../../../common/dto/update-user.dto';
 import { AuthGuard } from '../../../../common/guard/auth.guard';
 import { UserSession } from '../user-session.decorator';
 import { UserEntity } from '../../../../common/entity/user.entity';

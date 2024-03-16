@@ -9,11 +9,14 @@ import { BillingException } from '../../../../common/exception/billing.exception
 import { ExceptionCodeEnum } from '../../../../common/enum/exception-code.enum';
 import { AccountEntity } from '../../../../common/entity/balance.entity';
 import { Sequelize } from 'sequelize-typescript';
+import { MqService } from '../../../../common/mq/mq.service';
+import { QueueNameEnum } from '../../../../common/enum/queue-name.enum';
 
 @Injectable()
 export class BalanceService {
   public constructor(
     private readonly sequelize: Sequelize,
+    protected readonly mqService: MqService,
     private readonly accountRepository: AccountRepository,
     private readonly logger: Logger,
   ) {}
@@ -48,7 +51,7 @@ export class BalanceService {
     userId,
     amount,
   }: TopUpDto & UserDto): Promise<AccountEntity> {
-    return this.sequelize.transaction(async (transaction) => {
+    const balance = await this.sequelize.transaction(async (transaction) => {
       const [rows] = await this.accountRepository.increment(
         userId,
         amount,
@@ -75,5 +78,11 @@ export class BalanceService {
 
       return new AccountEntity(balance);
     });
+
+    await this.mqService.sendToQueue(QueueNameEnum.RecalculateLoyalty, {
+      userId: balance.userId,
+    });
+
+    return balance;
   }
 }

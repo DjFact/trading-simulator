@@ -9,6 +9,9 @@ redis:
   host: 'localhost'
   port: 6379
 
+mq:
+  - 'amqp://localhost:5672'
+
 cache:
   ttl: 60
   prefix: 'LOYALTY_SERVICE'

@@ -36,16 +36,10 @@ export class OrderEntity {
   })
   quantity: number;
 
-  @ApiProperty({
-    enum: OrderActionTypeEnum,
-    description: 'Order action',
-  })
+  @ApiProperty({ enum: OrderActionTypeEnum, description: 'Order action' })
   action: OrderActionTypeEnum;
 
-  @ApiProperty({
-    enum: OrderTypeEnum,
-    description: 'Order type',
-  })
+  @ApiProperty({ enum: OrderTypeEnum, description: 'Order type' })
   orderType: OrderTypeEnum;
 
   @ApiPropertyOptional({
@@ -76,10 +70,7 @@ export class OrderEntity {
   })
   total?: number;
 
-  @ApiProperty({
-    enum: OrderStatusEnum,
-    description: 'Order status',
-  })
+  @ApiProperty({ enum: OrderStatusEnum, description: 'Order status' })
   status: OrderStatusEnum;
 
   @ApiPropertyOptional({

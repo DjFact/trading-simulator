@@ -32,10 +32,7 @@ export class UserEntity {
   })
   country?: string;
 
-  @ApiProperty({
-    enum: UserRoleEnum,
-    description: "User's role",
-  })
+  @ApiProperty({ enum: UserRoleEnum, description: "User's role" })
   role: UserRoleEnum;
 
   @ApiPropertyOptional({
@@ -45,16 +42,10 @@ export class UserEntity {
   })
   phone?: string;
 
-  @ApiPropertyOptional({
-    type: Boolean,
-    description: 'Two factor enabled',
-  })
+  @ApiPropertyOptional({ type: Boolean, description: 'Two factor enabled' })
   twoFactorEnabled?: boolean;
 
-  @ApiPropertyOptional({
-    type: Boolean,
-    description: 'Two factor verified',
-  })
+  @ApiPropertyOptional({ type: Boolean, description: 'Two factor verified'})
   twoFactorVerified?: boolean;
 
   @Exclude()
@@ -64,10 +55,10 @@ export class UserEntity {
   twoFactorSecret?: string;
 
   @ApiProperty({ type: Date, description: 'User created at' })
-  createdAt?: Date;
+  createdAt: Date;
 
   @ApiProperty({ type: Date, description: 'User updated at' })
-  updatedAt?: Date;
+  updatedAt: Date;
 
   constructor(partial: Partial<any>) {
     if (!partial) {

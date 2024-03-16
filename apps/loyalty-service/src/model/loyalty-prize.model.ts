@@ -6,28 +6,34 @@ import {
   Column,
   DataType,
   ForeignKey,
+  Index,
   Model,
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { LoyaltyStatusEnum } from '../../../../common/enum/loyalty.enum';
-import { Status } from './status.model';
+import { LoyaltyStatus } from './loyalty-status.model';
 
-@Table({ timestamps: true })
-export class Prize extends Model {
+@Table({
+  timestamps: true,
+  indexes: [
+    { fields: ['country', 'loyalty', { name: 'createdAt', order: 'DESC' }] },
+  ],
+})
+export class LoyaltyPrize extends Model {
   @PrimaryKey
   @Column({ autoIncrement: true })
   id: number;
 
+  @Index
   @Column({ type: DataType.STRING, allowNull: false })
   name: string;
 
   @Column({ type: DataType.STRING, allowNull: false })
   description: string;
 
-  @ForeignKey(() => Status)
+  @ForeignKey(() => LoyaltyStatus)
   @Column({ type: DataType.STRING, allowNull: false })
-  loyalty: LoyaltyStatusEnum;
+  loyalty: string;
 
   @Column({ type: DataType.INTEGER, allowNull: false })
   points: number;

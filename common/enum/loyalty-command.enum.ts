@@ -18,4 +18,6 @@ export class LoyaltyCommandEnum {
 
   static GetUserStatus = generateCommandName('getUserStatus');
   static MakePrizeOrder = generateCommandName('makePrizeOrder');
+
+  static RecalculateUserStatus = generateCommandName('recalculateUserStatus');
 }

@@ -15,11 +15,6 @@ import { UserService } from './user/user.service';
 import { OtpCheckDto } from '../../../common/dto/otp-check.dto';
 import { OtpService } from './otp/otp.service';
 import { UserRoleEnum } from '../../../common/enum/user-role.enum';
-import { Sequelize } from 'sequelize-typescript';
-import { MicroserviceEnum } from '../../../common/enum/microservice.enum';
-import { BillingCommandEnum } from '../../../common/enum/billing-command.enum';
-import { UserDto } from '../../../common/dto/user.dto';
-import { ClientProxyService } from '../../../common/client-proxy/client-proxy.service';
 
 @Injectable()
 export class AuthService {
@@ -167,7 +162,7 @@ export class AuthService {
 
     return accessTokenDto.renew
       ? this.getAuthInfoDto(user, jwtData.twoFactorCompleted)
-      : jwtData;
+      : user;
   }
 
   async refreshAccessToken(refreshToken: string): Promise<AuthInfoDto> {

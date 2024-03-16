@@ -3,7 +3,6 @@
  */
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Account } from '../model/account.model';
 import { Holding } from '../model/holding.model';
 import { Transaction } from 'sequelize';
 import { IHoldingRepository } from './holding-repository.interface';
