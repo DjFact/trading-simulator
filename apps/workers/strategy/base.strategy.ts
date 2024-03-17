@@ -53,17 +53,11 @@ export abstract class BaseStrategy implements IStrategy {
       );
     }
 
+    /** Check if order is expired (24 hours) */
     if (
       order.createdAt.getTime() + 1000 * 60 * 60 * 24 <
       new Date().getTime()
     ) {
-      await this.orderRepository.update(
-        orderId,
-        { status: OrderStatusEnum.Expired },
-        transaction,
-      );
-      await transaction.commit();
-
       throw new BillingException(
         'Order expired',
         ExceptionCodeEnum.OrderExpired,
@@ -71,5 +65,46 @@ export abstract class BaseStrategy implements IStrategy {
     }
 
     return new OrderEntity(order);
+  }
+
+  async cancelOrder(
+    orderId: string,
+    message: string,
+    transaction: Transaction,
+  ): Promise<OrderEntity> {
+    const [cnt, [updated]] = await this.orderRepository.update(
+      orderId,
+      { status: OrderStatusEnum.Canceled, info: message },
+      transaction,
+    );
+
+    if (cnt === 0) {
+      throw new BillingException(
+        'Order not canceled',
+        ExceptionCodeEnum.OrderCancelError,
+      );
+    }
+
+    return new OrderEntity(updated);
+  }
+
+  async expireOrder(
+    orderId: string,
+    transaction: Transaction,
+  ): Promise<OrderEntity> {
+    const [cnt, [updated]] = await this.orderRepository.update(
+      orderId,
+      { status: OrderStatusEnum.Expired },
+      transaction,
+    );
+
+    if (cnt === 0) {
+      throw new BillingException(
+        'Order not expired',
+        ExceptionCodeEnum.OrderExpireError,
+      );
+    }
+
+    return new OrderEntity(updated);
   }
 }

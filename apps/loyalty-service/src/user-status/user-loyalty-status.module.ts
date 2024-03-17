@@ -14,12 +14,20 @@ import { LoyaltyPrize } from '../model/loyalty-prize.model';
 import { UserLoyaltyStatus } from '../model/user-loyalty-status.model';
 import { UserLoyaltyPrizePoint } from '../model/user-loyalty-prize-point.model';
 import { UserLoyaltyOrder } from '../model/user-loyalty-order.model';
-import { UserLoyaltyStatusSystemService } from './user-loyalty-status-system.service';
+import { UserLoyaltyStatusProcessor } from './user-loyalty-status.processor';
 import { ClientProxyModule } from '../../../../common/client-proxy/client-proxy.module';
 import { MqModule } from '../../../../common/mq/mq.module';
+import {
+  getBullModuleRoot,
+  registerBullQueue,
+} from '../../../../common/module.utils';
+import { NOTIFY_BY_SOCKET_QUEUE } from '../../../gateway/src/websocket/processor/socket-gateway.processor';
+import { MicroserviceEnum } from '../../../../common/enum/microservice.enum';
 
 @Module({
   imports: [
+    getBullModuleRoot(MicroserviceEnum.LoyaltyService),
+    registerBullQueue(NOTIFY_BY_SOCKET_QUEUE),
     SequelizeModule.forFeature([
       LoyaltyPrize,
       UserLoyaltyStatus,
@@ -36,7 +44,7 @@ import { MqModule } from '../../../../common/mq/mq.module';
     UserLoyaltyStatusRepository,
     UserLoyaltyPrizePointRepository,
     UserLoyaltyOrderRepository,
-    UserLoyaltyStatusSystemService,
+    UserLoyaltyStatusProcessor,
     Logger,
   ],
 })

@@ -14,11 +14,17 @@ import { StrategyException } from '../../common/exception/strategy.exception';
 import { OrderDto } from '../../common/dto/order.dto';
 import { ExceptionCodeEnum } from '../../common/enum/exception-code.enum';
 import { instanceToPlain } from 'class-transformer';
+import { Queue } from 'bull';
+import { WsSocketSendEventEnum } from '../gateway/src/websocket/enum/ws-socket-send-event.enum';
+import { OrderStatusEnum } from '../../common/enum/order-status.enum';
+import { OrderEntity } from '../../common/entity/order.entity';
+import { BillingException } from '../../common/exception/billing.exception';
 
 export abstract class BaseWorkerService implements OnModuleInit {
   protected readonly strategy: BaseStrategy;
 
   protected constructor(
+    private readonly notifyBySocketQueue: Queue,
     strategyFactory: StrategyFactory,
     protected readonly mqService: MqService,
     protected readonly logger: Logger,
@@ -45,13 +51,16 @@ export abstract class BaseWorkerService implements OnModuleInit {
     const closePrice = 100;
     const transaction = await this.strategy.createTransaction();
 
+    let processedOrder: OrderEntity;
+    let isOrderProcessed = false;
+
     try {
       const order = await this.strategy.getOrderById(
         orderDto.orderId,
         transaction,
       );
 
-      const processedOrder = await this.strategy.processOrder(
+      processedOrder = await this.strategy.processOrder(
         order,
         closePrice,
         transaction,
@@ -63,20 +72,40 @@ export abstract class BaseWorkerService implements OnModuleInit {
         QueueNameEnum.RecalculateLoyalty,
         instanceToPlain(processedOrder),
       );
+      isOrderProcessed = true;
     } catch (e) {
-      if (e?.code !== ExceptionCodeEnum.OrderExpired) {
-        await transaction.rollback();
-      }
-
-      if (e instanceof StrategyException) {
-        const { queueName } = this.getWorkerConfig();
-        await this.mqService.sendToQueue(queueName as string, orderDto);
+      await transaction.rollback();
+      if (e instanceof BillingException) {
+        const cancelTransaction = await this.strategy.createTransaction();
+        if (e.code === ExceptionCodeEnum.OrderExpired) {
+          processedOrder = await this.strategy.expireOrder(
+            orderDto.orderId,
+            cancelTransaction,
+          );
+        } else {
+          processedOrder = await this.strategy.cancelOrder(
+            orderDto.orderId,
+            (e?.code || e.message) as string,
+            cancelTransaction,
+          );
+        }
+        await cancelTransaction.commit();
+        isOrderProcessed = true;
       } else {
         this.logger.error(e);
+        const { queueName } = this.getWorkerConfig();
+        await this.mqService.sendToQueue(queueName as string, orderDto);
       }
     }
 
     channel.ack(msg);
+
+    if (isOrderProcessed) {
+      await this.notifyBySocketQueue.add(
+        WsSocketSendEventEnum.OrderCompleted,
+        instanceToPlain(processedOrder),
+      );
+    }
   }
 
   protected abstract getWorkerConfig(): {

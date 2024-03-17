@@ -14,6 +14,7 @@ import { GatewayOrderModule } from './order/gateway-order.module';
 import { GatewayLoyaltyStatusModule } from './loyalty/status/gateway-loyalty-status.module';
 import { GatewayLoyaltyPrizeModule } from './loyalty/prize/gateway-loyalty-prize.module';
 import { GatewayLoyaltyUserStatusModule } from './loyalty/user-status/gateway-loyalty-user-status.module';
+import { SocketGatewayModule } from './websocket/socket-gateway.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { GatewayLoyaltyUserStatusModule } from './loyalty/user-status/gateway-lo
     GatewayLoyaltyStatusModule,
     GatewayLoyaltyPrizeModule,
     GatewayLoyaltyUserStatusModule,
+    SocketGatewayModule,
     WsModule,
     HealthModule,
   ],

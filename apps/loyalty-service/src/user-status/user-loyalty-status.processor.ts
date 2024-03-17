@@ -22,14 +22,21 @@ import { ClientProxyService } from '../../../../common/client-proxy/client-proxy
 import { QueueNameEnum } from '../../../../common/enum/queue-name.enum';
 import { ConsumeMessage } from 'amqplib';
 import { ChannelWrapper } from 'amqp-connection-manager';
-import { UserLoyaltyStatusEntity } from '../../../../common/entity/user-loyalty-status.entity';
 import { UserLoyaltyStatus } from '../model/user-loyalty-status.model';
+import { InjectQueue } from '@nestjs/bull';
+import { NOTIFY_BY_SOCKET_QUEUE } from '../../../gateway/src/websocket/processor/socket-gateway.processor';
+import { Queue } from 'bull';
+import { WsSocketSendEventEnum } from '../../../gateway/src/websocket/enum/ws-socket-send-event.enum';
+import { RecalculatedLoyaltyStatusEntity } from '../../../../common/entity/recalculated-loyalty-status.entity';
+import { instanceToPlain } from 'class-transformer';
 
 const LOT = 10;
 
 @Injectable()
-export class UserLoyaltyStatusSystemService implements OnModuleInit {
+export class UserLoyaltyStatusProcessor implements OnModuleInit {
   constructor(
+    @InjectQueue(NOTIFY_BY_SOCKET_QUEUE)
+    private readonly notifyBySocketQueue: Queue,
     private readonly sequelize: Sequelize,
     protected readonly mqService: MqService,
     private readonly clientProxyService: ClientProxyService,
@@ -62,13 +69,17 @@ export class UserLoyaltyStatusSystemService implements OnModuleInit {
 
     const transaction = await this.sequelize.transaction();
     try {
-      const [status, isNew] = await this.recalculateStatus(
+      const recalculatedStatus = await this.recalculateStatus(
         userId,
         transaction,
         order,
       );
       await transaction.commit();
-      /** todo: send notification to user (if status -> changed status) */
+      /** send notification to user by websockets */
+      await this.notifyBySocketQueue.add(
+        WsSocketSendEventEnum.UpdatedLoyaltyStatus,
+        instanceToPlain(recalculatedStatus),
+      );
     } catch (e) {
       await transaction.rollback();
       if (!(e instanceof LoyaltyException)) {
@@ -87,7 +98,7 @@ export class UserLoyaltyStatusSystemService implements OnModuleInit {
     userId: string,
     transaction: Transaction,
     order?: Partial<OrderEntity>,
-  ): Promise<[UserLoyaltyStatusEntity, boolean]> {
+  ): Promise<RecalculatedLoyaltyStatusEntity> {
     const userStatus = await this.userStatusRepository.findByUserId(
       userId,
       transaction,
@@ -97,7 +108,7 @@ export class UserLoyaltyStatusSystemService implements OnModuleInit {
         { userId: order.userId, status: LoyaltyStatusEnum.Executive },
         transaction,
       );
-      return [new UserLoyaltyStatusEntity(newStatus), true];
+      return new RecalculatedLoyaltyStatusEntity(newStatus, true);
     }
 
     let points = userStatus.points;
@@ -154,7 +165,7 @@ export class UserLoyaltyStatusSystemService implements OnModuleInit {
     points: number,
     isOrder: boolean,
     transaction: Transaction,
-  ): Promise<[UserLoyaltyStatusEntity, boolean]> {
+  ): Promise<RecalculatedLoyaltyStatusEntity> {
     const currentDeposit = await this.getUserDeposit(userId);
 
     const { rows: statuses } = await this.statusRepository.findAll(transaction);
@@ -185,9 +196,12 @@ export class UserLoyaltyStatusSystemService implements OnModuleInit {
           ExceptionCodeEnum.UserLoyaltyStatusNotUpdated,
         );
       }
-      return [new UserLoyaltyStatusEntity(updatedStatus), !!newUserStatus];
+      return new RecalculatedLoyaltyStatusEntity(
+        updatedStatus,
+        !!newUserStatus,
+      );
     }
 
-    return [new UserLoyaltyStatusEntity(currentStatus), false];
+    return new RecalculatedLoyaltyStatusEntity(currentStatus, false);
   }
 }
