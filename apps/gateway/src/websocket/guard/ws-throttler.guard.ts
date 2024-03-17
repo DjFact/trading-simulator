@@ -4,7 +4,6 @@
  */
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { ThrottlerException, ThrottlerGuard } from '@nestjs/throttler';
-import { getRequestIp } from '../../../../../common/request.utils';
 
 @Injectable()
 export class WsThrottlerGuard extends ThrottlerGuard {
@@ -14,7 +13,12 @@ export class WsThrottlerGuard extends ThrottlerGuard {
     ttl: number,
   ): Promise<boolean> {
     const client = context.switchToWs().getClient();
-    let ip = String(getRequestIp(client.handshake));
+    const req = client.handshake;
+    let ip =
+      req.headers['x-forwarded-for'] ||
+      req.connection?.remoteAddress ||
+      req.address ||
+      '';
     // If there are multiple IP addresses in the x-forwarded-for header, get the first one
     if (ip.includes(',')) {
       ip = ip.split(',')[0];
@@ -23,7 +27,7 @@ export class WsThrottlerGuard extends ThrottlerGuard {
     if (ip.startsWith('::ffff:')) {
       ip = ip.substring(7);
     }
-
+console.log('IP: ' + ip);
     const key = this.generateKey(context, ip, '');
     const { totalHits } = await this.storageService.increment(key, ttl);
 

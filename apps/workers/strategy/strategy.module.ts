@@ -16,11 +16,13 @@ import { OrderService } from '../../billing-service/src/order/order.service';
 import { OrderRepository } from '../../billing-service/src/repository/order.repository';
 import { AccountRepository } from '../../billing-service/src/repository/account.repository';
 import { HoldingRepository } from '../../billing-service/src/repository/holding.repository';
+import { MqModule } from '../../../common/mq/mq.module';
 
 @Module({
   imports: [
     ConfigModule,
     SequelizeModule.forFeature([Account, Holding, Order]),
+    MqModule,
   ],
   providers: [
     StrategyFactory,

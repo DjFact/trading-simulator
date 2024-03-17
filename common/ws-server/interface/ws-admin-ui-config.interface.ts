@@ -3,7 +3,5 @@
  */
 
 export interface WsAdminUiConfigInterface {
-  username: string;
-  password: string;
   namespace?: string;
 }

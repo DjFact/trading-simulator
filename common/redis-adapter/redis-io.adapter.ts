@@ -14,10 +14,11 @@ import { setupWorker } from '@socket.io/sticky';
 import { WsConfigInterface } from '../ws-server/interface/ws-config.interface';
 import { WsAdminUiConfigInterface } from '../ws-server/interface/ws-admin-ui-config.interface';
 import { WsInstance } from '../ws-server/ws.instance';
-import { GatewayEventEnum } from '../enum/gateway-event.enum';
-import { GatewayException } from '../exception/gateway.exception';
 import { CommonConfigurationEnum } from '../enum/common-configuration.enum';
 import { createRedisClient } from '../module.utils';
+import { WsGatewayEventEnum } from '../ws-server/enum/ws-gateway-event.enum';
+import { WsGatewayException } from '../ws-server/exception/ws-gateway.exception';
+import { ExceptionCodeEnum } from '../enum/exception-code.enum';
 
 export type WsServer = Server & { adapter: RedisAdapter };
 
@@ -43,7 +44,9 @@ export class RedisIoAdapter extends IoAdapter {
     );
     server.adapter(this.adapterConstructor);
 
-    setupWorker(server);
+    if (process.env.NODE_ENV === 'production') {
+      setupWorker(server);
+    }
 
     this.wsInstance.setServer(server);
     this.denyMainConnect(server);
@@ -62,8 +65,8 @@ export class RedisIoAdapter extends IoAdapter {
   private denyMainConnect(server: WsServer): void {
     server.on('connection', (socket) => {
       socket.emit(
-        GatewayEventEnum.Error,
-        new GatewayException('Access Forbidden'),
+        WsGatewayEventEnum.Error,
+        new WsGatewayException('Access Forbidden', ExceptionCodeEnum.Forbidden),
       );
       socket.disconnect();
     });
@@ -76,8 +79,8 @@ export class RedisIoAdapter extends IoAdapter {
     instrument(server, {
       auth: {
         type: 'basic',
-        username: adminUIConfig.username,
-        password: hashSync(adminUIConfig.password, 10),
+        username: this.configService.get('SOCKET_UI_USERNAME'),
+        password: hashSync(this.configService.get('SOCKET_UI_PASSWORD'), 10),
       },
       mode:
         process.env.NODE_ENV === 'production' ? 'production' : 'development',

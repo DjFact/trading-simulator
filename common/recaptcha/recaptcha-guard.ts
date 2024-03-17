@@ -39,7 +39,7 @@ export class RecaptchaGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (!this.config?.url || !this.config?.projects) {
+    if (!this.config?.url || !this.configService.get('RECAPTCHA_SECRET')) {
       return this.notConfiguredRecaptcha();
     }
 
@@ -49,11 +49,10 @@ export class RecaptchaGuard implements CanActivate {
       return this.notConfiguredRecaptcha();
     }
 
-    const params: IRecaptchaProjectConfig =
-      this.config.projects[project.project];
-    if (!params) {
-      return this.notConfiguredRecaptcha();
-    }
+    const params: IRecaptchaProjectConfig = {
+      secret: this.configService.get('RECAPTCHA_SECRET'),
+      score: this.configService.get<number>('RECAPTCHA_SCORE'),
+    };
 
     const request = context.switchToHttp().getRequest();
     const recaptchaToken = request.get(RECAPTCHA_HEADER);

@@ -48,7 +48,7 @@ export abstract class BaseWorkerService implements OnModuleInit {
     const orderDto: OrderDto = JSON.parse(msg.content.toString());
 
     /** todo: get close price from market */
-    const closePrice = 100;
+    const closePrice = 110;
     const transaction = await this.strategy.createTransaction();
 
     let processedOrder: OrderEntity;

@@ -8,6 +8,7 @@ import { getMicroserviceProvider } from '../module.utils';
   imports: [ConfigModule],
   providers: [
     getMicroserviceProvider(MicroserviceEnum.AuthService),
+    getMicroserviceProvider(MicroserviceEnum.BillingService),
     getMicroserviceProvider(MicroserviceEnum.LoyaltyService),
     getMicroserviceProvider(MicroserviceEnum.MailService),
     getMicroserviceProvider(MicroserviceEnum.TradeService),

@@ -30,6 +30,6 @@ async function bootstrap() {
     process.exit(0);
   });
 
-  console.log(`LoyaltyProgram Gateway is running on: ${await app.getUrl()}`);
+  console.log(`Trading Simulator Gateway is running on: ${await app.getUrl()}`);
 }
 bootstrap();

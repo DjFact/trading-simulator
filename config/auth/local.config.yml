@@ -1,14 +1,3 @@
-db:
-  host: 'localhost'
-  port: 5432
-  username: 'postgres'
-  password: 'postgres'
-  database: 'loyalty'
-
-redis:
-  host: 'localhost'
-  port: 6379
-
 cache:
   ttl: 60
   prefix: 'AUTH_SERVICE'
@@ -17,7 +6,6 @@ app:
   id: 'auth'
 
 jwt:
-  secret: 'kslhfOIEFY#(*ru_s9pcjc90u2f0jc3DJO-'
   accessExpiresIn: 900
   refreshExpiresIn: '10 days'
 
@@ -41,7 +29,7 @@ microservice:
   timeout: 10000
 
 admin:
-  name: 'Viktor Plotnikov'
+  name: 'Admin'
   email: 'viktorr.plotnikov@gmail.com'
   password: 'password'
   country: 'GB'

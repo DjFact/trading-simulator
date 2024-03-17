@@ -1,7 +1,7 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
  */
-import Redis, { Cluster } from 'ioredis';
+import Redis, { Cluster, RedisOptions } from 'ioredis';
 import * as yaml from 'js-yaml';
 import * as winston from 'winston';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -9,13 +9,14 @@ import { WinstonModule } from '../libs/nest-winston/winston.module';
 import { utilities as nestWinstonModuleUtilities } from '../libs/nest-winston/winston.utilities';
 import { join, resolve } from 'path';
 import { readFileSync } from 'fs';
-import { RedisModule, RedisModuleOptions } from '@liaoliaots/nestjs-redis';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CommonConfigurationEnum } from './enum/common-configuration.enum';
 import { MicroserviceEnum } from './enum/microservice.enum';
-import { ClientProxyFactory, ClientsModule, Transport } from '@nestjs/microservices';
-import { RedisOptions } from '@nestjs/microservices/interfaces/microservice-configuration.interface';
-import { SequelizeModule } from '@nestjs/sequelize';
+import { ClientProxyFactory, Transport } from '@nestjs/microservices';
+import {
+  SequelizeModule,
+  SequelizeModuleAsyncOptions,
+} from '@nestjs/sequelize';
 import { HttpModule } from '@nestjs/axios';
 import { BullModule } from '@nestjs/bull';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -28,8 +29,13 @@ export function getMicroserviceProvider(microType: MicroserviceEnum) {
     useFactory: (configService: ConfigService) =>
       ClientProxyFactory.create({
         transport: Transport.REDIS,
-        options: configService.get('redis'),
-      } as RedisOptions),
+        options: {
+          host: configService.get('REDIS_HOST'),
+          port: configService.get('REDIS_PORT'),
+          password: configService.get('REDIS_PASSWORD'),
+          tls: configService.get('REDIS_TLS') ? {} : undefined,
+        },
+      }),
   };
 }
 
@@ -59,8 +65,16 @@ export function getSequelizeModuleRoot() {
   return SequelizeModule.forRootAsync({
     imports: [ConfigModule],
     inject: [ConfigService],
-    useFactory: async (configService: ConfigService) =>
-      Object.assign({}, configService.get('db'), {
+    useFactory: async (configService: ConfigService) => {
+      const config = {
+        host: configService.get('DB_HOST'),
+        port: configService.get('DB_PORT'),
+        username: configService.get('DB_USER'),
+        password: configService.get('DB_PASSWORD'),
+        database: configService.get('DB_DATABASE'),
+      };
+
+      return Object.assign({}, config, {
         dialect: 'postgresql',
         autoLoadModels: true,
         synchronize: true,
@@ -69,7 +83,8 @@ export function getSequelizeModuleRoot() {
         pool: {
           max: 50,
         },
-      }),
+      }) as SequelizeModuleAsyncOptions;
+    },
   });
 }
 
@@ -91,18 +106,6 @@ export function getConfigModule(name: string) {
   });
 }
 
-export function getRedis() {
-  return RedisModule.forRootAsync({
-    imports: [ConfigModule],
-    inject: [ConfigService],
-    useFactory: async (
-      configService: ConfigService,
-    ): Promise<RedisModuleOptions> => ({
-      config: configService.get(CommonConfigurationEnum.Redis),
-    }),
-  });
-}
-
 export function getThrottlerModule() {
   const defaultThrottle = {
     ttl: 60,
@@ -112,11 +115,12 @@ export function getThrottlerModule() {
   return ThrottlerModule.forRootAsync({
     imports: [ConfigModule],
     inject: [ConfigService],
-    useFactory: (configService: ConfigService) =>
+    useFactory: (configService: ConfigService) => [
       Object.assign(
         defaultThrottle,
         configService.get(CommonConfigurationEnum.Throttle) || {},
       ),
+    ],
   });
 }
 
@@ -125,9 +129,15 @@ export function createRedisClient(
   prefix?: string,
 ): Redis | Cluster {
   const opts = { enableReadyCheck: false, maxRetriesPerRequest: null };
-  const redis = configService.get(CommonConfigurationEnum.Redis);
-  if (redis) {
-    return new Redis({ ...redis, prefix, ...opts });
+  const redisOptions = {
+    host: configService.get<string>('REDIS_HOST'),
+    port: configService.get<number>('REDIS_PORT'),
+    password: configService.get<string>('REDIS_PASSWORD'),
+    tls: configService.get('REDIS_TLS') ? {} : undefined,
+  };
+
+  if (redisOptions) {
+    return new Redis({ ...redisOptions, prefix, ...opts } as RedisOptions);
   }
 
   const redisCluster = configService.get(CommonConfigurationEnum.RedisCluster);
@@ -186,7 +196,12 @@ export function getCacheModule(ttl?: number) {
     imports: [ConfigModule],
     useFactory: async (configService: ConfigService) => ({
       store: redisStore,
-      socket: configService.get('redis'),
+      socket: {
+        host: configService.get('REDIS_HOST'),
+        port: configService.get('REDIS_PORT'),
+        password: configService.get('REDIS_PASSWORD'),
+        tls: configService.get('REDIS_TLS') ? true : undefined,
+      },
       ttl: ttl || configService.get('cache.ttl'),
     }),
     inject: [ConfigService],

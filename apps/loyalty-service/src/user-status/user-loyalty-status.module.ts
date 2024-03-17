@@ -23,12 +23,15 @@ import {
 } from '../../../../common/module.utils';
 import { NOTIFY_BY_SOCKET_QUEUE } from '../../../gateway/src/websocket/processor/socket-gateway.processor';
 import { MicroserviceEnum } from '../../../../common/enum/microservice.enum';
+import { LoyaltyStatusRepository } from '../repository/loyalty-status.repository';
+import { LoyaltyStatus } from '../model/loyalty-status.model';
 
 @Module({
   imports: [
     getBullModuleRoot(MicroserviceEnum.LoyaltyService),
     registerBullQueue(NOTIFY_BY_SOCKET_QUEUE),
     SequelizeModule.forFeature([
+      LoyaltyStatus,
       LoyaltyPrize,
       UserLoyaltyStatus,
       UserLoyaltyPrizePoint,
@@ -44,6 +47,7 @@ import { MicroserviceEnum } from '../../../../common/enum/microservice.enum';
     UserLoyaltyStatusRepository,
     UserLoyaltyPrizePointRepository,
     UserLoyaltyOrderRepository,
+    LoyaltyStatusRepository,
     UserLoyaltyStatusProcessor,
     Logger,
   ],

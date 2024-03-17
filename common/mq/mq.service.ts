@@ -73,11 +73,11 @@ export class MqService {
   }
 
   protected connectToRabbitMQ() {
-    const urls = this.configService.get('mq');
-    if (!urls) {
+    const url = this.configService.get('MQ_URL');
+    if (!url) {
       throw new Error('RabbitMQ connection URL not found');
     }
-    this.connection = connect(urls);
+    this.connection = connect(url);
   }
 
   protected createChannel(): ChannelWrapper {

@@ -1,17 +1,3 @@
-db:
-  host: 'localhost'
-  port: 5432
-  username: 'postgres'
-  password: 'postgres'
-  database: 'loyalty'
-
-redis:
-  host: 'localhost'
-  port: 6379
-
-mq:
-  - 'amqp://localhost:5672'
-
 winston:
   console:
     level: 'info'
