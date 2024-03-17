@@ -10,13 +10,11 @@ import { MqService } from '../../common/mq/mq.service';
 import { OrderTypeEnum } from '../../common/enum/order-type.enum';
 import { ConsumeMessage } from 'amqplib';
 import { ChannelWrapper } from 'amqp-connection-manager';
-import { StrategyException } from '../../common/exception/strategy.exception';
 import { OrderDto } from '../../common/dto/order.dto';
 import { ExceptionCodeEnum } from '../../common/enum/exception-code.enum';
 import { instanceToPlain } from 'class-transformer';
 import { Queue } from 'bull';
 import { WsSocketSendEventEnum } from '../gateway/src/websocket/enum/ws-socket-send-event.enum';
-import { OrderStatusEnum } from '../../common/enum/order-status.enum';
 import { OrderEntity } from '../../common/entity/order.entity';
 import { BillingException } from '../../common/exception/billing.exception';
 
