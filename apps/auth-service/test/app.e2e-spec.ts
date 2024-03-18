@@ -138,8 +138,10 @@ describe('AuthController (e2e)', () => {
         password: 'password',
         code: '123456',
       };
-      const userService: UserService = app.get(UserService);
-      await userService.deleteByEmail(user.email);
+      try {
+        const userService: UserService = app.get(UserService);
+        await userService.deleteByEmail(user.email);
+      } catch {}
 
       const response = await lastValueFrom(
         clientProxy.send({ cmd: AuthCommandEnum.SignUp }, user),
