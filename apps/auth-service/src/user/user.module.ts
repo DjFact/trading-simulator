@@ -6,6 +6,7 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { User } from './user.model';
 import { UserRepository } from './user.repository';
 import { ClientProxyModule } from '../../../../common/client-proxy/client-proxy.module';
+import { UserProxy } from './user.proxy';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { ClientProxyModule } from '../../../../common/client-proxy/client-proxy.
     ClientProxyModule,
   ],
   controllers: [UserController],
-  providers: [UserService, UserRepository, Logger],
-  exports: [UserService],
+  providers: [UserService, UserProxy, UserRepository, Logger],
+  exports: [UserService, UserProxy],
 })
 export class UserModule {}

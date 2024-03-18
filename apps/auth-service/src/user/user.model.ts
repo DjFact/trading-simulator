@@ -20,22 +20,22 @@ export class User extends Model {
   @Column({ type: DataType.UUID })
   id: string;
 
-  @Column({ type: DataType.CHAR(255), allowNull: false })
+  @Column({ type: DataType.STRING, allowNull: false })
   name: string;
 
   @Index({ unique: true })
   @Column({
     allowNull: false,
-    type: DataType.CHAR(255),
+    type: DataType.STRING,
     validate: { isEmail: { msg: "User's email is required" } },
   })
   email: string;
 
-  @Column({ type: DataType.CHAR(255), allowNull: false })
+  @Column({ type: DataType.CHAR(60), allowNull: false })
   password: string;
 
   @Column({
-    type: DataType.CHAR(255),
+    type: DataType.STRING,
     validate: { notEmpty: { msg: 'Roles is required' } },
     defaultValue: UserRoleEnum.User,
   })
@@ -45,7 +45,7 @@ export class User extends Model {
   country?: string;
 
   @Column({
-    type: DataType.CHAR(255),
+    type: DataType.STRING,
     allowNull: true,
     validate: {
       is: {
@@ -62,7 +62,7 @@ export class User extends Model {
   @Column({ type: DataType.BOOLEAN, defaultValue: false })
   twoFactorVerified?: boolean;
 
-  @Column({ type: DataType.CHAR(255), allowNull: true })
+  @Column({ type: DataType.STRING, allowNull: true })
   twoFactorSecret?: string;
 
   @CreatedAt
@@ -88,7 +88,7 @@ export class User extends Model {
     }
   }
 
-  comparePassword(candidatePassword: string) {
-    return bcrypt.compare(candidatePassword, this.password);
+  async comparePassword(candidatePassword: string) {
+    return bcrypt.compare(candidatePassword, this.password.trim());
   }
 }

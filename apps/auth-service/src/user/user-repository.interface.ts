@@ -8,12 +8,18 @@ import { Transaction } from 'sequelize';
 
 export interface IUserRepository {
   findById(id: string): Promise<User | null>;
+
   findByEmail(email: string, transaction?: Transaction): Promise<User | null>;
+
   create(user: User, transaction?: Transaction): Promise<User>;
+
   findAll({
     startDate,
     endDate,
     ...pageDto
   }: DateFilterDto): Promise<{ rows: User[]; count: number }>;
+
   updateById(id: string, user: User): Promise<[number, User[]]>;
+
+  deleteByEmail(email: string): Promise<number>;
 }

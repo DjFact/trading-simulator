@@ -52,4 +52,8 @@ export class UserRepository implements IUserRepository {
       returning: true,
     });
   }
+
+  async deleteByEmail(email: string): Promise<number> {
+    return this.userModel.destroy({ where: { email } });
+  }
 }

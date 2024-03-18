@@ -19,6 +19,8 @@ import { UserEntity } from '../../../../common/entity/user.entity';
 import { Observable } from 'rxjs';
 import { TotalDataEntity } from '../../../../common/entity/total-data.entity';
 import { ApiOkResponseCustom } from '../../../../common/swagger/response.schema';
+import { Roles } from '../../../../common/roles.decorator';
+import { UserRoleEnum } from '../../../../common/enum/user-role.enum';
 
 @ApiBearerAuth()
 @ApiTags('User Gateway Service')
@@ -30,6 +32,7 @@ export class GatewayUserController {
 
   @ApiOperation({ summary: 'Get all users' })
   @ApiOkResponseCustom(TotalDataEntity, 200, UserEntity)
+  @Roles({ enum: [UserRoleEnum.Admin] })
   @Get('all')
   findAll(
     @UserSession() user: UserEntity,

@@ -18,7 +18,7 @@ import { LoyaltyPrize } from './loyalty-prize.model';
 export class LoyaltyStatus extends Model {
   @PrimaryKey
   @Column({
-    type: DataType.CHAR(255),
+    type: DataType.STRING,
     allowNull: false,
     defaultValue: LoyaltyStatusEnum.Executive,
   })

@@ -7,6 +7,6 @@ export class MicroserviceException extends RpcException {
     public readonly code: ExceptionCodeEnum,
     public readonly context?: string | object,
   ) {
-    super(error);
+    super({ error, code });
   }
 }

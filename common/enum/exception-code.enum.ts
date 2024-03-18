@@ -9,6 +9,8 @@ export enum ExceptionCodeEnum {
   UserAdminConfigNotFound = 1013,
   UserCreationError = 1016,
   UserNotUpdated = 1017,
+  OneTimePasswordExpired = 1018,
+  OneTimePasswordWrong = 1019,
 
   BalanceNotFound = 2000,
   AccountCreationError = 2001,

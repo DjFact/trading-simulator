@@ -1,7 +1,7 @@
-import { MicroserviceException } from './microservice.exception';
 import { ExceptionCodeEnum } from '../enum/exception-code.enum';
+import { AuthorizationException } from './authorization.exception';
 
-export class OtpException extends MicroserviceException {
+export class OtpException extends AuthorizationException {
   constructor(
     error: string | object,
     code: ExceptionCodeEnum,

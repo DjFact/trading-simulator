@@ -29,13 +29,17 @@ export function getMicroserviceProvider(microType: MicroserviceEnum) {
     useFactory: (configService: ConfigService) =>
       ClientProxyFactory.create({
         transport: Transport.REDIS,
-        options: {
-          host: configService.get('REDIS_HOST'),
-          port: configService.get('REDIS_PORT'),
-          password: configService.get('REDIS_PASSWORD'),
-          tls: configService.get('REDIS_TLS') ? {} : undefined,
-        },
+        options: getRedisOptions(configService),
       }),
+  };
+}
+
+export function getRedisOptions(configService: ConfigService): RedisOptions {
+  return {
+    host: configService.get('REDIS_HOST'),
+    port: configService.get('REDIS_PORT'),
+    password: configService.get('REDIS_PASSWORD'),
+    tls: configService.get('REDIS_TLS') ? {} : undefined,
   };
 }
 
@@ -129,12 +133,7 @@ export function createRedisClient(
   prefix?: string,
 ): Redis | Cluster {
   const opts = { enableReadyCheck: false, maxRetriesPerRequest: null };
-  const redisOptions = {
-    host: configService.get<string>('REDIS_HOST'),
-    port: configService.get<number>('REDIS_PORT'),
-    password: configService.get<string>('REDIS_PASSWORD'),
-    tls: configService.get('REDIS_TLS') ? {} : undefined,
-  };
+  const redisOptions = getRedisOptions(configService);
 
   if (redisOptions) {
     return new Redis({ ...redisOptions, prefix, ...opts } as RedisOptions);
@@ -197,9 +196,7 @@ export function getCacheModule(ttl?: number) {
     useFactory: async (configService: ConfigService) => ({
       store: redisStore,
       socket: {
-        host: configService.get('REDIS_HOST'),
-        port: configService.get('REDIS_PORT'),
-        password: configService.get('REDIS_PASSWORD'),
+        ...getRedisOptions(configService),
         tls: configService.get('REDIS_TLS') ? true : undefined,
       },
       ttl: ttl || configService.get('cache.ttl'),

@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { LoyaltyModule } from './loyalty.module';
-import { getConfigModule } from '../../../common/module.utils';
+import { getConfigModule, getRedisOptions } from '../../../common/module.utils';
 import { MicroserviceEnum } from '../../../common/enum/microservice.enum';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -19,7 +19,7 @@ async function bootstrap() {
     LoyaltyModule,
     {
       transport: Transport.REDIS,
-      options: configService.get('redis'),
+      options: getRedisOptions(configService),
     },
   );
 

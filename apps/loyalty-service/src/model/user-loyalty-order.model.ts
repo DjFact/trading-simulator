@@ -31,7 +31,7 @@ export class UserLoyaltyOrder extends Model {
   @Column({ type: DataType.INTEGER, allowNull: false })
   prizeId: number;
 
-  @Column({ type: DataType.CHAR(255), allowNull: false })
+  @Column({ type: DataType.STRING, allowNull: false })
   status: OrderStatusEnum;
 
   @Column({ type: DataType.DATE })

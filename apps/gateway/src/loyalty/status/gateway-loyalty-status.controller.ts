@@ -21,11 +21,14 @@ import { LoyaltyStatusUpdateDto } from '../../../../../common/dto/loyalty-status
 import { LoyaltyStatusDto } from '../../../../../common/dto/loyalty-status.dto';
 import { ApiOkResponseCustom } from '../../../../../common/swagger/response.schema';
 import { Observable } from 'rxjs';
+import { Roles } from '../../../../../common/roles.decorator';
+import { UserRoleEnum } from '../../../../../common/enum/user-role.enum';
 
 @ApiBearerAuth()
 @ApiTags('Loyalty Gateway Status Service')
-@UseInterceptors(ResponseInterceptor, ClassSerializerInterceptor)
 @UseGuards(AuthGuard)
+@Roles({ enum: [UserRoleEnum.Admin] })
+@UseInterceptors(ResponseInterceptor, ClassSerializerInterceptor)
 @Controller('api/loyalty/status')
 export class GatewayLoyaltyStatusController {
   constructor(private readonly statusService: GatewayLoyaltyStatusService) {}

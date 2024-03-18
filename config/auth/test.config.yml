@@ -1,0 +1,35 @@
+cache:
+  ttl: 60
+  prefix: 'AUTH_SERVICE'
+
+app:
+  id: 'auth'
+
+jwt:
+  accessExpiresIn: 900
+  refreshExpiresIn: '10 days'
+
+throttle:
+  ttl: 60
+  limit: 20
+
+winston:
+  console:
+    level: 'info'
+
+2fa_auth:
+  name: 'Dev Trading System'
+
+health:
+  memory:
+    heapMB: 1024
+    rssMB: 1024
+
+microservice:
+  timeout: 10000
+
+admin:
+  name: 'Admin'
+  email: 'viktorr.plotnikov@gmail.com'
+  password: 'password'
+  country: 'GB'

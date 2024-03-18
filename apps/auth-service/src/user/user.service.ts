@@ -11,18 +11,14 @@ import { DateFilterDto } from '../../../../common/dto/date-filter.dto';
 import { UserRepository } from './user.repository';
 import { UpdateUserFullDto } from '../../../../common/dto/update-user-full.dto';
 import { Sequelize } from 'sequelize-typescript';
-import { ClientProxyService } from '../../../../common/client-proxy/client-proxy.service';
-import { AuthInfoDto } from '../../../../common/dto/auth-info.dto';
-import { MicroserviceEnum } from '../../../../common/enum/microservice.enum';
-import { BillingCommandEnum } from '../../../../common/enum/billing-command.enum';
-import { UserDto } from '../../../../common/dto/user.dto';
+import { UserProxy } from './user.proxy';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly sequelize: Sequelize,
+    private readonly userProxy: UserProxy,
     private readonly configService: ConfigService,
-    private readonly clientProxyService: ClientProxyService,
     private readonly userRepository: UserRepository,
     private readonly logger: Logger,
   ) {}
@@ -34,7 +30,7 @@ export class UserService {
     let newPassword: string;
     if (updateDto.password) {
       newPassword =
-        updateDto.password + this.configService.get('app.cryptSalt');
+        updateDto.password + this.configService.get<string>('APP_CRYPT_SALT');
     }
 
     const [cnt, [user]] = await this.userRepository.updateById(id, {
@@ -67,7 +63,7 @@ export class UserService {
 
     if (
       await user.comparePassword(
-        password + this.configService.get('app.cryptSalt'),
+        password + this.configService.get<string>('APP_CRYPT_SALT'),
       )
     ) {
       return new UserEntity(user);
@@ -102,8 +98,8 @@ export class UserService {
 
   async create(createDto: CreateUserDto): Promise<UserEntity> {
     const { password, ...userDto } = createDto;
-    const userData = Object.assign(userDto, {
-      password: password + this.configService.get('app.cryptSalt'),
+    const userData = Object.assign({}, userDto, {
+      password: password + this.configService.get<string>('APP_CRYPT_SALT'),
     }) as User;
 
     const transaction = await this.sequelize.transaction();
@@ -125,11 +121,7 @@ export class UserService {
         transaction,
       );
 
-      await this.clientProxyService.asyncSend<AuthInfoDto>(
-        MicroserviceEnum.BillingService,
-        { cmd: BillingCommandEnum.CreateAccount },
-        { userId: createdUser.id } as UserDto,
-      );
+      await this.userProxy.createUserAccount(createdUser.id);
 
       await transaction.commit();
 
@@ -138,11 +130,24 @@ export class UserService {
       await transaction.rollback();
 
       this.logger.error(`Create user failed with error: ${e.message}`);
+
       throw new UserException(
         `Create user failed with error: ${e.message}`,
         ExceptionCodeEnum.UserCreationError,
-        createDto,
+        userDto,
       );
     }
+  }
+
+  async deleteByEmail(email: string): Promise<boolean> {
+    const cnt = await this.userRepository.deleteByEmail(email);
+    if (!cnt) {
+      throw new UserException(
+        `User with email '${email}' not found`,
+        ExceptionCodeEnum.UserNotFound,
+        { email },
+      );
+    }
+    return true;
   }
 }

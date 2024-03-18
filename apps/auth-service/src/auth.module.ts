@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Logger, Module, OnModuleDestroy } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { HealthModule } from './health/health.module';
@@ -16,6 +16,7 @@ import { ErrorMicroserviceInterceptor } from '../../../common/interfceptor/error
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthSystemService } from './auth-system.service';
+import { Sequelize } from 'sequelize-typescript';
 
 @Module({
   imports: [
@@ -44,4 +45,10 @@ import { AuthSystemService } from './auth-system.service';
     Logger,
   ],
 })
-export class AuthModule {}
+export class AuthModule implements OnModuleDestroy {
+  constructor(private readonly sequelize: Sequelize) {}
+
+  async onModuleDestroy(): Promise<void> {
+    await this.sequelize.close();
+  }
+}

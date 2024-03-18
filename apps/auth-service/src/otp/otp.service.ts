@@ -7,7 +7,6 @@ import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { OtpCachedInterface } from '../../../../common/interface/otp-cached.interface';
 import { ClientProxyService } from '../../../../common/client-proxy/client-proxy.service';
-import { OtpCheckResponseDto } from '../../../../common/dto/otp-check-response.dto';
 import { OtpCheckDto } from '../../../../common/dto/otp-check.dto';
 import { OtpDto } from '../../../../common/dto/otp.dto';
 import { MicroserviceEnum } from '../../../../common/enum/microservice.enum';
@@ -55,7 +54,7 @@ export class OtpService {
     return true;
   }
 
-  async checkOtp(otpCheckDto: OtpCheckDto): Promise<OtpCheckResponseDto> {
+  async checkOtp(otpCheckDto: OtpCheckDto): Promise<boolean> {
     return this.checkCodeBySource(
       OTP_EMAIL_PREFIX,
       otpCheckDto.email,
@@ -92,19 +91,25 @@ export class OtpService {
     prefix: string,
     customKey: string,
     code: string,
-  ): Promise<OtpCheckResponseDto> {
+  ): Promise<boolean> {
     let cachedCode: string | OtpCachedInterface = await this.cacheManager.get(
       prefix + customKey,
     );
     if (!cachedCode) {
-      return { status: false, error: 'One-time password was expired!' };
+      throw new OtpException(
+        'One-time password was expired!',
+        ExceptionCodeEnum.OneTimePasswordExpired,
+      );
     }
 
     cachedCode = <OtpCachedInterface>JSON.parse(cachedCode as string);
     if (!cachedCode.code || cachedCode.code !== code) {
-      return { status: false, error: 'One-time password is wrong!' };
+      throw new OtpException(
+        'One-time password is wrong!',
+        ExceptionCodeEnum.OneTimePasswordWrong,
+      );
     }
 
-    return { status: true, error: null };
+    return true;
   }
 }

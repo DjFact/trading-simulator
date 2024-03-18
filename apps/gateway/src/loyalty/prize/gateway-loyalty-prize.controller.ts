@@ -25,11 +25,14 @@ import { LoyaltyPrizeCreateDto } from '../../../../../common/dto/loyalty-prize-c
 import { LoyaltyPrizeUpdateDto } from '../../../../../common/dto/loyalty-prize-update.dto';
 import { LoyaltyPrizeDto } from '../../../../../common/dto/loyalty-prize.dto';
 import { Observable } from 'rxjs';
+import { Roles } from '../../../../../common/roles.decorator';
+import { UserRoleEnum } from '../../../../../common/enum/user-role.enum';
 
 @ApiBearerAuth()
 @ApiTags('Loyalty Gateway Prize Service')
-@UseInterceptors(ResponseInterceptor, ClassSerializerInterceptor)
 @UseGuards(AuthGuard)
+@Roles({ enum: [UserRoleEnum.Admin] })
+@UseInterceptors(ResponseInterceptor, ClassSerializerInterceptor)
 @Controller('api/loyalty/prize')
 export class GatewayLoyaltyPrizeController {
   constructor(private readonly prizeService: GatewayLoyaltyPrizeService) {}

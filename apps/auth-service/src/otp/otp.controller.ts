@@ -8,7 +8,6 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { OtpService } from './otp.service';
 import { OtpDto } from '../../../../common/dto/otp.dto';
 import { OtpCheckDto } from '../../../../common/dto/otp-check.dto';
-import { OtpCheckResponseDto } from '../../../../common/dto/otp-check-response.dto';
 
 @Controller()
 @UseInterceptors(ClassSerializerInterceptor)
@@ -21,7 +20,7 @@ export class OtpController {
   }
 
   @MessagePattern({ cmd: AuthCommandEnum.CheckOtp })
-  checkOtp(@Payload() payload: OtpCheckDto): Promise<OtpCheckResponseDto> {
+  checkOtp(@Payload() payload: OtpCheckDto): Promise<boolean> {
     return this.otpService.checkOtp(payload);
   }
 }

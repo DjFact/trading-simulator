@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AuthModule } from './auth.module';
-import { getConfigModule } from '../../../common/module.utils';
+import { getConfigModule, getRedisOptions } from '../../../common/module.utils';
 import { MicroserviceEnum } from '../../../common/enum/microservice.enum';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -20,7 +20,7 @@ async function bootstrap() {
     AuthModule,
     {
       transport: Transport.REDIS,
-      options: configService.get('redis'),
+      options: getRedisOptions(configService),
     },
   );
 
@@ -30,8 +30,12 @@ async function bootstrap() {
   app.useGlobalFilters(app.get(MicroserviceAllExceptionFilter));
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const authSystemService: AuthSystemService = app.get(AuthSystemService);
-  await authSystemService.createAdminUser();
+  try {
+    const authSystemService: AuthSystemService = app.get(AuthSystemService);
+    await authSystemService.createAdminUser();
+  } catch (e) {
+    console.error(e);
+  }
 
   await app.listen();
   console.log(`${MicroserviceEnum.AuthService} has been started`);
