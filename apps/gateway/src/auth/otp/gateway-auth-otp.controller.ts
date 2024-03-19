@@ -16,8 +16,6 @@ import { ResponseErrorEntity } from '../../../../../common/entity/response-error
 import { RecaptchaGuard } from '../../../../../common/recaptcha/recaptcha-guard';
 import { OtpDto } from '../../../../../common/dto/otp.dto';
 import { GatewayAuthOtpService } from './gateway-auth-otp.service';
-import { ApiOkResponseCustom } from '../../../../../common/swagger/response.schema';
-import { AuthInfoDto } from '../../../../../common/dto/auth-info.dto';
 
 @ApiTags('Authentication Gateway Service')
 @ApiInternalServerErrorResponse({ type: ResponseErrorEntity, status: 500 })

@@ -4,7 +4,8 @@ import {
   getBullModuleRoot,
   getConfigModule,
   getSequelizeModuleRoot,
-  getWinstonLoggerModule, registerBullQueue
+  getWinstonLoggerModule,
+  registerBullQueue,
 } from '../../../../common/module.utils';
 import { ClientProxyModule } from '../../../../common/client-proxy/client-proxy.module';
 import { MicroserviceEnum } from '../../../../common/enum/microservice.enum';

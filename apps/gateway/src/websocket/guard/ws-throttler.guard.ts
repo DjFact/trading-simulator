@@ -27,7 +27,7 @@ export class WsThrottlerGuard extends ThrottlerGuard {
     if (ip.startsWith('::ffff:')) {
       ip = ip.substring(7);
     }
-console.log('IP: ' + ip);
+
     const key = this.generateKey(context, ip, '');
     const { totalHits } = await this.storageService.increment(key, ttl);
 

@@ -1,0 +1,88 @@
+name: CI - Dev
+
+on:
+  push:
+    branches: [dev, master]
+
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.15'
+
+      - name: Install dependencies
+        run: npm i eslint
+
+      - name: Run ESLint
+        run: npm run lint
+
+  e2e-tests:
+    needs: eslint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:12
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: loyalty
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.15'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U testuser; do
+            echo "Waiting for PostgreSQL to start..."
+            sleep 2
+          done
+
+      - name: Wait for Redis
+        run: |
+          until redis-cli -h localhost -p 6379 ping; do
+            echo "Waiting for Redis to start..."
+            sleep 2
+          done
+
+      - name: Run E2E tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_DATABASE: loyalty
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: jwt_secret
+          APP_CRYPT_SALT: app_crypt_salt
+        run: npm run test:e2e

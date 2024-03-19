@@ -11,7 +11,6 @@ import { OrderService } from '../../billing-service/src/order/order.service';
 import { AccountRepository } from '../../billing-service/src/repository/account.repository';
 import { HoldingRepository } from '../../billing-service/src/repository/holding.repository';
 import { OrderRepository } from '../../billing-service/src/repository/order.repository';
-import { Transaction } from 'sequelize';
 
 @Injectable()
 export class LimitStrategy extends BaseStrategy implements IStrategy {
@@ -33,11 +32,7 @@ export class LimitStrategy extends BaseStrategy implements IStrategy {
     );
   }
 
-  async processOrder(
-    order: OrderEntity,
-    closePrice: number,
-    transaction: Transaction,
-  ): Promise<OrderEntity> {
+  async processOrder(): Promise<OrderEntity> {
     return null;
   }
 }

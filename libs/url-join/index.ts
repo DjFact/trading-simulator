@@ -1,5 +1,5 @@
 function normalize(strArray: string[]) {
-  let resultArray: string[] = [];
+  const resultArray: string[] = [];
   if (strArray.length === 0) {
     return '';
   }
@@ -10,7 +10,7 @@ function normalize(strArray: string[]) {
 
   // If the first part is a plain protocol, we combine it with the next part.
   if (strArray[0].match(/^[^/:]+:\/*$/) && strArray.length > 1) {
-    let first = strArray.shift();
+    const first = strArray.shift();
     strArray[0] = first + strArray[0];
   }
 
@@ -54,7 +54,7 @@ function normalize(strArray: string[]) {
   str = str.replace(/\/(\?|&|#[^!])/g, '$1');
 
   // replace ? in parameters with &
-  let parts = str.split('?');
+  const parts = str.split('?');
   str = parts.shift() + (parts.length > 0 ? '?' : '') + parts.join('&');
 
   return str;
