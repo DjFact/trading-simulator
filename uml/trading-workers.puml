@@ -1,0 +1,66 @@
+@startuml
+    title Trading Simulator - Trading Workers
+    participant Market
+    box "Trading Simulator Private Area" #efefef
+        participant Queues
+        participant Database
+        participant Loyalty
+        participant "Trading Workers" as Workers
+        participant Gateway
+    end box
+    actor Client
+
+    Queues <-[#gray]-> Workers : <plain>    Get message with [orderId] for Process
+        activate Workers
+            Workers -[#gray]> Market : <plain>    Get current price for [assetSymbol]
+        deactivate Workers
+        activate Market
+            Market -[#gray]-> Workers : <plain>    Return [currentPrice]
+        deactivate Market
+        activate Workers
+            alt start transaction
+                Workers -[#gray]> Database : <plain>    Find order with [orderId]
+                activate Database
+                    Database -[#gray]-> Workers : <plain>    Return [order]
+                deactivate Database
+                Workers -[#gray]>o Workers : <plain>    Check for [orderStatus] and [limit]
+                Workers -[#gray]>o Workers : <plain>    Process order
+                Workers -[#gray]> Database : <plain>    Create new order
+                activate Database
+                    Database -[#gray]-> Workers : <plain>    Return [order]
+                deactivate Database
+                Workers -[#gray]> Database : <plain>    Commit transaction
+                activate Database
+                    Database -[#gray]>o Database : <plain>    Commit [transactionId]
+                    Database -[#gray]-> Workers : <plain>    True
+                deactivate Database
+            else
+                Workers -[#gray]> Database : <plain>    Rollback transaction
+                activate Database
+                    Database -[#gray]>o Database : <plain>    Rollback [transactionId]
+                    Database -[#gray]-> Workers : <plain>    True
+                deactivate Database
+                break Order not found
+                    Workers -[#red]-x Workers : <plain>    OrderNotFound (3000)
+                end
+                break Order already closed
+                    Workers -[#red]-x Workers : <plain>    OrderAlreadyClosed (3006)
+                end
+                break Order expired
+                    Workers -[#red]-x Workers : <plain>    OrderExpired (3009)
+                end
+                break Other exception
+                    Workers -[#gray]> Queues : <plain>    Send to queue for retry
+                end
+            end
+            Workers -[#gray]> Queues : <plain>    Ack message
+            alt order has been processed
+                Workers -[#gray]> Queues : <plain>    Send OrderCompleted to websockets notifications queue
+                Workers -[#gray]> Queues : <plain>    Send order to RecalculateLoyalty queue
+            end
+        deactivate Workers
+        Queues -[#gray]-> Gateway : <plain>    Send OrderCompleted notifications by websockets
+        activate Gateway
+            Gateway -[#green]-> Client : <plain>    Send OrderCompleted by websockets
+        deactivate Gateway
+@enduml

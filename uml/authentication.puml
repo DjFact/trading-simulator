@@ -1,0 +1,57 @@
+@startuml
+    title Trading Simulator - Authentication
+    actor Client
+    box "Trading Simulator Private Area" #efefef
+        participant Gateway
+        participant Auth
+        participant Database
+    end box
+
+    activate Client
+        Client -[#gray]> Gateway : <plain>  SignIn request with [email, password]
+    deactivate Client
+
+    activate Gateway
+        break [email, password] is empty or isn't valid format
+            Gateway x-[#red]-x Client : <plain>    BadRequestError (400)
+        end
+        Gateway -[#gray]> Auth : <plain>   Authentication with [email, password]
+    deactivate Gateway
+
+    activate Auth
+         Auth -[#gray]> Database : <plain>  Get user from DB
+         activate Database
+             Database -[#gray]-> Auth : <plain>  Return [user]
+         deactivate Database
+         break [email, password] isn't valid
+             Auth x-[#red]-x Client : <plain>    UserWrongCredentials (1011)
+         end
+         Auth -[#gray]>o Auth : <plain>  Generate [accessToken, refreshToken]
+         Auth -[#gray]-> Gateway : <plain>    [accessToken, refreshToken]
+    deactivate Auth
+
+    activate Gateway
+        Gateway -[#green]-> Client : <plain>    Return [accessToken, refreshToken, 2FaParams]
+    deactivate Gateway
+
+    alt 2FA is required
+        activate Client
+            Client -[#gray]>o Client : <plain>    Show 2FA form
+            Client -[#gray]> Gateway : <plain>    SignIn request with [2FaCode, accessToken]
+        deactivate Client
+        activate Gateway
+            Gateway -[#gray]> Auth : <plain>    Check 2FA [code, accessToken]
+        deactivate Gateway
+        activate Auth
+            break [code, accessToken] isn't valid
+                Auth x-[#red]-x Client : <plain>    AuthError (4001)
+            end
+            Auth -[#gray]>o Auth : <plain>  Generate 2FA [accessToken, refreshToken]
+            Auth -[#gray]-> Gateway : <plain>    2FA [accessToken, refreshToken]
+        deactivate Auth
+        activate Gateway
+            Gateway -[#green]-> Client : <plain>    Return [accessToken, refreshToken]
+        deactivate Gateway
+        activate Client
+    end
+@enduml

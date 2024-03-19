@@ -1,0 +1,60 @@
+@startuml
+    title Trading Simulator - Loyalty Recalculation
+    box "Trading Simulator Private Area" #efefef
+        participant Queues
+        participant Database
+        participant Loyalty
+        participant Gateway
+    end box
+    actor Client
+
+        Queues -[#gray]> Loyalty : <plain>    Get message with order to RecalculateLoyalty
+        activate Loyalty
+            alt start transaction
+                Loyalty -[#gray]> Database : <plain>    Find user loyalty by [userId]
+                activate Database
+                    Database -[#gray]-> Loyalty : <plain>    Return [loyalty]
+                deactivate Database
+                alt user has loyalty
+                    Loyalty -[#gray]>o Loyalty : <plain>    Recalculate user loyalty
+                    Loyalty -[#gray]> Database : <plain>    Update user loyalty
+                    activate Database
+                        Database -[#gray]-> Loyalty : <plain>    Return [loyalty]
+                    deactivate Database
+                else
+                    Loyalty -[#gray]> Database : <plain>    Create new user loyalty with status [executive]
+                    activate Database
+                        Database -[#gray]-> Loyalty : <plain>    Return [loyalty]
+                    deactivate Database
+                end
+                Loyalty -[#gray]> Database : <plain>    Commit transaction
+                activate Database
+                    Database -[#gray]>o Database : <plain>    Commit [transactionId]
+                    Database -[#gray]-> Loyalty : <plain>    True
+                deactivate Database
+            else
+                Loyalty -[#gray]> Database : <plain>    Rollback transaction
+                activate Database
+                    Database -[#gray]>o Database : <plain>    Rollback [transactionId]
+                    Database -[#gray]-> Loyalty : <plain>    True
+                deactivate Database
+                break Trading time not enough
+                    Loyalty -[#red]-x Loyalty : <plain>    TradeTimeNotEnough (7009)
+                end
+                break Trading time not enough
+                    Loyalty -[#red]-x Loyalty : <plain>    PricePointsNotEnough (7010)
+                end
+                break Other exception
+                    Loyalty -[#gray]> Queues : <plain>    Send to queue for retry
+                end
+            end
+            Loyalty -[#gray]> Queues : <plain>    Ack message
+            alt loyalty has been processed
+                Loyalty -[#gray]> Queues : <plain>    Send UpdatedLoyaltyStatus to websockets notifications queue
+            end
+        deactivate Loyalty
+        Queues -[#gray]-> Gateway : <plain>    Send UpdatedLoyaltyStatus notification by websockets
+        activate Gateway
+            Gateway -[#green]-> Client : <plain>    Send UpdatedLoyaltyStatus by websockets
+        deactivate Gateway
+@enduml

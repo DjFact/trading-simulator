@@ -67,19 +67,15 @@ export class UserLoyaltyStatusProcessor implements OnModuleInit {
     const payload = JSON.parse(msg.content.toString());
     const { userId, ...order }: Partial<OrderEntity> = payload;
 
+    let recalculatedStatus: RecalculatedLoyaltyStatusEntity;
     const transaction = await this.sequelize.transaction();
     try {
-      const recalculatedStatus = await this.recalculateStatus(
+      recalculatedStatus = await this.recalculateStatus(
         userId,
         transaction,
         order,
       );
       await transaction.commit();
-      /** send notification to user by websockets */
-      await this.notifyBySocketQueue.add(
-        WsSocketSendEventEnum.UpdatedLoyaltyStatus,
-        instanceToPlain(recalculatedStatus),
-      );
     } catch (e) {
       await transaction.rollback();
       if (!(e instanceof LoyaltyException)) {
@@ -92,6 +88,14 @@ export class UserLoyaltyStatusProcessor implements OnModuleInit {
     }
 
     channel.ack(msg);
+
+    /** send notification to user by websockets */
+    if (recalculatedStatus) {
+      await this.notifyBySocketQueue.add(
+        WsSocketSendEventEnum.UpdatedLoyaltyStatus,
+        instanceToPlain(recalculatedStatus),
+      );
+    }
   }
 
   private async recalculateStatus(

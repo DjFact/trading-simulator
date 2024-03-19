@@ -1,0 +1,275 @@
+@startuml
+    title Trading Simulator - Create Order
+    actor Client
+    box "Trading Simulator Private Area" #efefef
+        participant Gateway
+        participant Auth
+        participant Billing
+        participant Queues
+        participant Database
+        participant Loyalty
+        participant "Trading Workers" as Workers
+    end box
+    participant Market
+
+    activate Client
+        Client -[#gray]> Gateway : <plain>  SignIn request with [email, password]
+    deactivate Client
+
+    activate Gateway
+        break [email, password] is empty or isn't valid format
+            Gateway x-[#red]-x Client : <plain>    BadRequestError (400)
+        end
+        Gateway -[#gray]> Auth : <plain>   Authentication with [email, password]
+    deactivate Gateway
+
+    activate Auth
+         Auth -[#gray]> Database : <plain>  Get user from DB
+         activate Database
+             Database -[#gray]-> Auth : <plain>  Return [user]
+         deactivate Database
+         break [email, password] isn't valid
+             Auth x-[#red]-x Client : <plain>    UserWrongCredentials (1011)
+         end
+         Auth -[#gray]>o Auth : <plain>  Generate [accessToken, refreshToken]
+         Auth -[#gray]-> Gateway : <plain>    [accessToken, refreshToken]
+    deactivate Auth
+
+    activate Gateway
+        Gateway -[#green]-> Client : <plain>    Return [accessToken, refreshToken, 2FaParams]
+    deactivate Gateway
+
+    alt 2FA is required
+        activate Client
+            Client -[#gray]>o Client : <plain>    Show 2FA form
+            Client -[#gray]> Gateway : <plain>    SignIn request with [2FaCode, accessToken]
+        deactivate Client
+        activate Gateway
+            Gateway -[#gray]> Auth : <plain>    Check 2FA [code, accessToken]
+        deactivate Gateway
+        activate Auth
+            break [code, accessToken] isn't valid
+                Auth x-[#red]-x Client : <plain>    AuthError (4001)
+            end
+            Auth -[#gray]>o Auth : <plain>  Generate 2FA [accessToken, refreshToken]
+            Auth -[#gray]-> Gateway : <plain>    2FA [accessToken, refreshToken]
+        deactivate Auth
+        activate Gateway
+            Gateway -[#green]-> Client : <plain>    Return [accessToken, refreshToken]
+        deactivate Gateway
+        activate Client
+    end
+
+    Client -[#gray]> Gateway : <plain>  Create new order
+    note right of Client
+        assetSymbol: string;
+        quantity: number;
+        action: OrderActionTypeEnum; // [buy, sell]
+        orderType: OrderTypeEnum; // [market, limit, stopLoss]
+        limit?: number;
+    end note
+    deactivate Client
+
+    activate Gateway
+         ref over Gateway, Auth: <plain>    check [JWT from headers] and get [user]
+         activate Auth
+             break [JWT from headers] isn't valid
+                 Auth x-[#red]-x Client : <plain>    Unauthorized (401)
+             end
+             Auth -[#gray]> Database : <plain>  Get user from DB
+             activate Database
+                 Database -[#gray]-> Auth : <plain>  Return [user]
+             deactivate Database
+             break user not found
+                 Auth x-[#red]-x Client : <plain>    UserNotFound (1010)
+             end
+         deactivate Auth
+         Gateway -[#gray]> Billing : <plain>    Create new order with [userId, orderData]
+    deactivate Gateway
+
+    activate Billing
+        break empty limit for no [maker] order
+            Billing x-[#red]-x Client : <plain>    LimitPriceNotSet (3002)
+        end
+        Billing -[#gray]> Market : <plain>  Get current price for [assetSymbol]
+    deactivate Billing
+    activate Market
+        Market -[#gray]-> Billing : <plain>    Return [currentPrice]
+    deactivate Market
+    activate Billing
+        alt start transaction
+            Billing -[#gray]> Database : <plain>    Find user account with [userId]
+            activate Database
+                Database -[#gray]-> Billing : <plain>    Return [account]
+            deactivate Database
+            Billing -[#gray]>o Billing : <plain>    Check for insufficient funds
+            Billing -[#gray]> Database : <plain>    Create order
+            note right of Billing
+                {
+                    ...orderDto,
+                    status: OrderStatusEnum.Opened,
+                    openPrice,
+                }
+            end note
+            activate Database
+                Database -[#gray]-> Billing : <plain>    Return [order]
+            deactivate Database
+            alt action === 'buy'
+                Billing -[#gray]>o Billing : <plain>    Increment user reserved funds
+            else action === 'sell'
+                Billing -[#gray]>o Billing : <plain>    Increment user reserved assets
+            end
+            Billing -[#gray]> Database : <plain>    Commit transaction
+            activate Database
+                Database -[#gray]>o Database : <plain>    Commit [transactionId]
+                Database -[#gray]-> Billing : <plain>    True
+            deactivate Database
+        else failed with exception
+            Billing -[#gray]> Database : <plain>    Rollback transaction
+            activate Database
+                Database -[#gray]>o Database : <plain>    Rollback [transactionId]
+                Database -[#gray]-> Billing : <plain>    True
+            deactivate Database
+            break Account not found
+                Billing x-[#red]-x Client : <plain>    AccountNotFound (3003)
+            end
+            break Insufficient funds
+                Billing x-[#red]-x Client : <plain>    InsufficientFunds (3004)
+            end
+            break Holding not found
+                Billing x-[#red]-x Client : <plain>    HoldingNotFound (3005)
+            end
+            break Other error
+                Billing x-[#red]-x Client : <plain>    OrderCreationError (3001)
+            end
+        end
+        Billing -[#gray]-> Queues : <plain>    Add [orderId] to [orderType] queue for processing
+        activate Queues
+        Billing -[#gray]-> Gateway : <plain>    Return [order]
+    deactivate Billing
+    activate Gateway
+        Gateway -[#green]-> Client : <plain>    Return [order]
+        note right of Client
+            {
+                id: string;
+                userId: string;
+                assetSymbol: string;
+                quantity: number;
+                action: OrderActionTypeEnum;
+                orderType: OrderTypeEnum;
+                limit?: number;
+                openPrice: number;
+                closePrice?: number;
+                total?: number;
+                status: OrderStatusEnum;
+                info?: string;
+                closedAt?: Date;
+                createdAt: Date;
+                updatedAt: Date;
+            }
+        end note
+    deactivate Gateway
+    Queues <-[#gray]-> Workers : <plain>    Get message with [orderId] for Process
+    activate Workers
+        Workers -[#gray]> Market : <plain>    Get current price for [assetSymbol]
+    deactivate Workers
+    activate Market
+        Market -[#gray]-> Workers : <plain>    Return [currentPrice]
+    deactivate Market
+    activate Workers
+        alt start transaction
+            Workers -[#gray]> Database : <plain>    Find order with [orderId]
+            activate Database
+                Database -[#gray]-> Workers : <plain>    Return [order]
+            deactivate Database
+            Workers -[#gray]>o Workers : <plain>    Check for [orderStatus] and [limit]
+            Workers -[#gray]>o Workers : <plain>    Process order
+            Workers -[#gray]> Database : <plain>    Create new order
+            activate Database
+                Database -[#gray]-> Workers : <plain>    Return [order]
+            deactivate Database
+            Workers -[#gray]> Database : <plain>    Commit transaction
+            activate Database
+                Database -[#gray]>o Database : <plain>    Commit [transactionId]
+                Database -[#gray]-> Workers : <plain>    True
+            deactivate Database
+        else
+            Workers -[#gray]> Database : <plain>    Rollback transaction
+            activate Database
+                Database -[#gray]>o Database : <plain>    Rollback [transactionId]
+                Database -[#gray]-> Workers : <plain>    True
+            deactivate Database
+            break Order not found
+                Workers -[#red]-x Workers : <plain>    OrderNotFound (3000)
+            end
+            break Order already closed
+                Workers -[#red]-x Workers : <plain>    OrderAlreadyClosed (3006)
+            end
+            break Order expired
+                Workers -[#red]-x Workers : <plain>    OrderExpired (3009)
+            end
+            break Other exception
+                Workers -[#gray]> Queues : <plain>    Send to queue for retry
+            end
+        end
+        Workers -[#gray]> Queues : <plain>    Ack message
+        alt order has been processed
+            Workers -[#gray]> Queues : <plain>    Send OrderCompleted to websockets notifications queue
+            Workers -[#gray]> Queues : <plain>    Send order to RecalculateLoyalty queue
+        end
+    deactivate Workers
+    Queues -[#gray]-> Gateway : <plain>    Send OrderCompleted notification by websockets
+    activate Gateway
+        Gateway -[#green]-> Client : <plain>    Send OrderCompleted by websockets
+    deactivate Gateway
+
+    Queues -[#gray]> Loyalty : <plain>    Get message with order to RecalculateLoyalty
+    activate Loyalty
+        alt start transaction
+            Loyalty -[#gray]> Database : <plain>    Find user loyalty by [userId]
+            activate Database
+                Database -[#gray]-> Loyalty : <plain>    Return [loyalty]
+            deactivate Database
+            alt user has loyalty
+                Loyalty -[#gray]>o Loyalty : <plain>    Recalculate user loyalty
+                Loyalty -[#gray]> Database : <plain>    Update user loyalty
+                activate Database
+                    Database -[#gray]-> Loyalty : <plain>    Return [loyalty]
+                deactivate Database
+            else
+                Loyalty -[#gray]> Database : <plain>    Create new user loyalty with status [executive]
+                activate Database
+                    Database -[#gray]-> Loyalty : <plain>    Return [loyalty]
+                deactivate Database
+            end
+            Loyalty -[#gray]> Database : <plain>    Commit transaction
+            activate Database
+                Database -[#gray]>o Database : <plain>    Commit [transactionId]
+                Database -[#gray]-> Loyalty : <plain>    True
+            deactivate Database
+        else
+            Loyalty -[#gray]> Database : <plain>    Rollback transaction
+            activate Database
+                Database -[#gray]>o Database : <plain>    Rollback [transactionId]
+                Database -[#gray]-> Loyalty : <plain>    True
+            deactivate Database
+            break Trading time not enough
+                Loyalty -[#red]-x Loyalty : <plain>    TradeTimeNotEnough (7009)
+            end
+            break Trading time not enough
+                Loyalty -[#red]-x Loyalty : <plain>    PricePointsNotEnough (7010)
+            end
+            break Other exception
+                Loyalty -[#gray]> Queues : <plain>    Send to queue for retry
+            end
+        end
+        Loyalty -[#gray]> Queues : <plain>    Ack message
+        alt loyalty has been processed
+            Loyalty -[#gray]> Queues : <plain>    Send UpdatedLoyaltyStatus to websockets notifications queue
+        end
+    deactivate Loyalty
+    Queues -[#gray]-> Gateway : <plain>    Send UpdatedLoyaltyStatus notification by websockets
+    activate Gateway
+        Gateway -[#green]-> Client : <plain>    Send UpdatedLoyaltyStatus by websockets
+    deactivate Gateway
+@enduml
