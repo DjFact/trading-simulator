@@ -6,7 +6,6 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "NODE_ENV=local nest start --watch",
     "start:auth": "NODE_ENV=local nest start auth-service --watch",
@@ -16,6 +15,12 @@
     "start:market": "NODE_ENV=local nest start market-worker --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/apps/gateway/main",
+    "build": "nest build",
+    "build:auth": "nest build auth-service",
+    "build:billing": "nest build billing-service",
+    "build:loyalty": "nest build loyalty-service",
+    "build:mail": "nest build mail-service",
+    "build:market": "nest build market-worker",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -24,8 +29,6 @@
     "test:e2e": "jest --config apps/auth-service/test/jest-e2e.json --forceExit"
   },
   "dependencies": {
-    "@ethersproject/bignumber": "^5.7.0",
-    "@liaoliaots/nestjs-redis": "^9.0.5",
     "@nestjs-modules/mailer": "^1.10.3",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/bull": "^10.1.0",

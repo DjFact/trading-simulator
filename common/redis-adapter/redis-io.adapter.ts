@@ -5,7 +5,7 @@ import { INestApplicationContext } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { Server } from 'socket.io';
 import { hostname } from 'os';
-import { hashSync } from 'bcryptjs';
+import { hashSync, genSaltSync } from 'bcryptjs';
 import { instrument, RedisStore } from '@socket.io/admin-ui';
 import { ConfigService } from '@nestjs/config';
 import { ServerOptions } from 'socket.io';
@@ -80,7 +80,10 @@ export class RedisIoAdapter extends IoAdapter {
       auth: {
         type: 'basic',
         username: this.configService.get('SOCKET_UI_USERNAME'),
-        password: hashSync(this.configService.get('SOCKET_UI_PASSWORD'), 10),
+        password: hashSync(
+          this.configService.get('SOCKET_UI_PASSWORD'),
+          genSaltSync(10),
+        ),
       },
       mode:
         process.env.NODE_ENV === 'production' ? 'production' : 'development',

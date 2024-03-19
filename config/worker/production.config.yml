@@ -1,0 +1,6 @@
+winston:
+  console:
+    level: 'info'
+
+microservice:
+  timeout: 10000
