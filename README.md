@@ -4,19 +4,23 @@
 
 It was created based on [Nest](https://nestjs.com/) framework.
 
+
+### Architecture
+![Architecture](diagram/architecture.png)
+
 The following diagrams show how the system works using the example of creating a new order
 
 ### Authentication (Auth Service)
-![Authentication](uml/authentication.png)
+![Authentication](diagram/uml/authentication.png)
 
 ### Create new order (Billing Service)
-![Authentication](uml/create-order.png)
+![Authentication](diagram/uml/create-order.png)
 
 ### Order processing  (Workers)
-![Trading Workers](uml/trading-workers.png)
+![Trading Workers](diagram/uml/trading-workers.png)
 
 ### Loyalty Status recalculation  (Loyalty Service)
-![Trading Workers](uml/loyalty-recalculation.png)
+![Trading Workers](diagram/uml/loyalty-recalculation.png)
 
 ## Installation
 
