@@ -13,4 +13,13 @@ COPY --from=build /usr/src/app/dist/apps/auth-service ./dist
 COPY --from=build /usr/src/app/config/auth ./config/auth
 COPY package*.json ./
 RUN npm install --omit=dev
+
+# Add entrypoint script
+RUN echo '#!/bin/sh' > /usr/local/bin/entrypoint.sh \
+    && echo 'export $(egrep -v '"'"'^#'"'"' /run/secrets/* | xargs)' >> /usr/local/bin/entrypoint.sh \
+    && echo 'exec "$@"' >> /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["node", "dist/main.js"]
+

@@ -1,0 +1,506 @@
+name: Docker-Publish-production
+
+on:
+  push:
+    branches: ["master"]
+
+  pull_request:
+    branches: ["master"]
+    paths:
+      - "**.json"
+  workflow_dispatch: {}
+
+env:
+  REGISTRY: 616475584916.dkr.ecr.eu-central-1.amazonaws.com
+  AWS_REGION: eu-central-1
+  INSTANCE_TAG_NAME: Role
+  INSTANCE_TAG_VALUE: manager
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+jobs:
+  checkout:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      contents: write
+      packages: read
+    outputs:
+      DOCKER_TAG: ${{ steps.generate-tag.outputs.DOCKER_TAG }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate Docker tag
+        id: generate-tag
+        run: |
+          TAG_NAME=$(date +%s)
+          echo "Docker tag generated: $TAG_NAME"
+          echo "DOCKER_TAG=$TAG_NAME" >> $GITHUB_ENV
+          echo "DOCKER_TAG=$TAG_NAME" >> $GITHUB_OUTPUT
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: npm i eslint
+
+      - name: Run ESLint
+        run: npm run lint
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.node_modules/packages
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/*.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node_modules-
+  e2e-tests:
+      needs: eslint
+      runs-on: ubuntu-latest
+      services:
+        postgres:
+          image: postgres:12
+          env:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: loyalty
+          ports:
+            - 5432:5432
+          # Set health checks to wait until postgres has started
+          options: >-
+            --health-cmd pg_isready
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+        redis:
+          image: redis
+          ports:
+            - 6379:6379
+          options: >-
+            --health-cmd "redis-cli ping"
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
+      steps:
+        - uses: actions/checkout@v4
+        - name: Use Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '20.x'
+        - name: Install dependencies
+          run: npm install
+        - name: Wait for PostgreSQL
+          run: |
+            until pg_isready -h localhost -p 5432 -U testuser; do
+              echo "Waiting for PostgreSQL to start..."
+              sleep 2
+            done
+        - name: Install Redis CLI
+          run: sudo apt-get update && sudo apt-get install -y redis-tools
+        - name: Wait for Redis
+          run: |
+            until redis-cli -h localhost -p 6379 ping; do
+              echo "Waiting for Redis to start..."
+              sleep 2
+            done
+        - name: Run E2E tests
+          env:
+            DB_HOST: localhost
+            DB_PORT: 5432
+            DB_USER: postgres
+            DB_PASSWORD: postgres
+            DB_DATABASE: loyalty
+            REDIS_HOST: localhost
+            REDIS_PORT: 6379
+            JWT_SECRET: jwt_secret
+            APP_CRYPT_SALT: app_crypt_salt
+          run: npm run test:e2e
+
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+      contents: read
+      packages: read
+    # Set job outputs to values from filter step
+    outputs:
+      repos: ${{ steps.filter.outputs.changes }}
+      update: ${{ steps.filter.outputs.all }}
+      sln: ${{ steps.filter.outputs.sln }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # For pull requests it's not necessary to checkout the code
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            trading.production.gateway:
+              - 'apps/gateway/**'
+              - 'config/gateway/**'
+            trading.production.billing:
+              - 'apps/billing-service/**'
+              - 'config/billing/**'
+            trading.production.auth:
+              - 'apps/auth-service/**'
+              - 'config/auth/**'
+            trading.production.loyalty:
+              - 'apps/loyalty-service/**'
+              - 'config/loyalty/**'
+            trading.production.mail:
+              - 'apps/mail-service/**'
+              - 'config/mail/**'
+              - 'templates/**'
+            trading.production.worker_market:
+              - 'apps/workers/**'
+              - 'config/workers/**'
+            all:
+              - 'libs/**'
+              - 'common/**'
+              - 'tsconfig.json'
+              - '.github/workflows/**'
+            sln:
+              - 'nest-cli.json'
+              - 'package.json'
+  seeoutput:
+    runs-on: ubuntu-latest
+    needs: [checkout, changes]
+    steps:
+      - env:
+          OUTPUT1: ${{needs.changes.outputs.repos}}
+          OUTPUT2: ${{needs.changes.outputs.update}}
+          OUTPUT3: ${{needs.changes.outputs.sln}}
+        run: echo "$OUTPUT1 $OUTPUT2 $OUTPUT3"
+
+  ci:
+    runs-on: ubuntu-latest
+    needs: [checkout, changes, eslint, e2e-tests]
+    if: ${{ needs.changes.outputs.repos != '[]' && needs.changes.outputs.update != 'true' }}
+    strategy:
+      matrix:
+        application: ${{ fromJson(needs.changes.outputs.repos) }}
+        include:
+          - NODE_ENV: "Production"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      ## Workaround: https://github.com/docker/build-push-action/issues/461
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/node_modules
+            '**/obj'
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/*.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node_modules-
+
+
+      - name: Cache Docker layers
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache-${{ matrix.application }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ matrix.application }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ matrix.application }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: "true"
+
+      # Init Docker login to Amazon ECR using the previously obtained credentials
+      - name: Initialize Docker login to Amazon ECR
+        uses: docker/login-action@v3
+        env:
+          AWS_REGION: eu-central-1
+        with:
+          registry: ${{ steps.login-ecr.outputs.registry }}
+          logout: false
+
+      - name: set path to dockerfile
+        id: setpath
+        run: |
+          if [[ ${{ matrix.application == 'trading.production.billing' }} ]]; then
+            echo "path=apps/billing-service" >> $GITHUB_OUTPUT
+            echo "dockerpath=docker/billing" >> $GITHUB_OUTPUT
+          elif [[ ${{ matrix.application == 'trading.production.gateway' }} ]]; then
+            echo "path=apps/gateway" >> $GITHUB_OUTPUT
+            echo "dockerpath=docker/gateway" >> $GITHUB_OUTPUT
+          elif [[ ${{ matrix.application == 'trading.production.mail' }} ]]; then
+            echo "path=apps/mail-service" >> $GITHUB_OUTPUT
+            echo "dockerpath=docker/mail" >> $GITHUB_OUTPUT
+          elif [[ ${{ matrix.application == 'trading.production.auth' }} ]]; then
+            echo "path=apps/auth-service" >> $GITHUB_OUTPUT
+            echo "dockerpath=docker/auth" >> $GITHUB_OUTPUT
+          elif [[ ${{ matrix.application == 'trading.production.loyalty' }} ]]; then
+            echo "path=apps/loyalty-service" >> $GITHUB_OUTPUT
+            echo "dockerpath=docker/loyalty" >> $GITHUB_OUTPUT
+          elif [[ ${{ matrix.application == 'trading.production.worker_market' }} ]]; then
+            echo "path=apps/workers" >> $GITHUB_OUTPUT
+            echo "dockerpath=docker/worker-market" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        env:
+          MY_ENV_VAR: ${{ matrix.application }}-change
+
+        if: ${{ needs.changes.outputs.repos != 'all'  || needs.changes.outputs.repos != 'sln' || steps.setpath.outputs.path != '' }}
+        with:
+          context: .
+          file: ./${{ steps.setpath.outputs.dockerpath }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ matrix.application }}:${{ needs.checkout.outputs.DOCKER_TAG  }}
+          cache-from: type=local,src=/tmp/.buildx-cache-${{ matrix.application }}
+          cache-to: type=local,dest=/tmp/.buildx-cache-${{ matrix.application }}-new,mode=max
+          build-args: |
+            NODE_ENV=${{ matrix.NODE_ENV }}
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache-${{ matrix.application }}
+          mv /tmp/.buildx-cache-${{ matrix.application }}-new /tmp/.buildx-cache-${{ matrix.application }}
+
+  update:
+    runs-on: ubuntu-latest
+    needs: [checkout, changes, eslint, e2e-tests]
+    if: ${{  needs.changes.outputs.update == 'true' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      matrix:
+        config:
+          - service: "trading.production.billing"
+            dockerfile: "docker/billing/Dockerfile"
+            path: "apps/billing-service/"
+
+
+          - service: "trading.production.gateway"
+            dockerfile: "docker/gateway/Dockerfile"
+            path: "apps/gateway/"
+
+          - service: "trading.production.mail"
+            dockerfile: "docker/mail/Dockerfile"
+            path: "apps/mail-service/"
+
+
+          - service: "trading.production.auth"
+            dockerfile: "docker/auth/Dockerfile"
+            path: "apps/auth-service/"
+
+
+          - service: "trading.production.loyalty"
+            dockerfile: "docker/loyalty/Dockerfile"
+            path: "apps/loyalty-service/"
+
+
+          - service: "trading.production.worker_market"
+            dockerfile: "docker/worker-market/Dockerfile"
+            path: "apps/workers/"
+
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Workaround: https://github.com/docker/build-push-action/issues/461
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v3
+
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.node_modules/packages
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/*.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node_modules-
+
+
+      - name: Cache Docker layers
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache-${{ matrix.config.service }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ matrix.config.service  }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ matrix.config.service  }}
+
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: "true"
+
+      # Init Docker login to Amazon ECR using the previously obtained credentials
+      - name: Initialize Docker login to Amazon ECR
+        uses: docker/login-action@v3
+        env:
+          AWS_REGION: eu-central-1
+        with:
+          registry: ${{ steps.login-ecr.outputs.registry }}
+          logout: false
+
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        env:
+          MY_ENV_VAR: ${{ matrix.config.service }}-change
+        with:
+          context: .
+          file: ./${{ matrix.config.dockerfile  }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ matrix.config.service }}:${{ needs.checkout.outputs.DOCKER_TAG  }}
+          cache-from: type=local,src=/tmp/.buildx-cache-${{ matrix.config.service }}
+          cache-to: type=local,dest=/tmp/.buildx-cache-${{ matrix.config.service }}-new,mode=max
+          build-args: |
+            NODE_ENV=Production
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache-${{ matrix.config.service }}
+          mv /tmp/.buildx-cache-${{ matrix.config.service }}-new /tmp/.buildx-cache-${{ matrix.config.service }}
+
+  deploy:
+    needs: [ci,update]
+    runs-on: ubuntu-latest
+    if: ${{ always() && (needs.ci.result == 'success' || needs.update.result == 'success') }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fetch SG ID
+        env:
+          region: ${{ env.AWS_REGION }}
+        id: fetch-sg-id
+        run: |
+          sg_name="launch-wizard-36"
+          # Get ID Security Group by name
+          sg_id=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=${sg_name}" --query "SecurityGroups[0].GroupId" --output text --region $region)
+
+          if [ -z "$sg_id" ]; then
+            echo "Security Group with specified name not found."
+            exit 1
+          fi
+          echo "sg_id=$sg_id" >> $GITHUB_OUTPUT
+
+      - name: Fetch Github Runner IP
+        id: fetch-github-runner-ip
+        run: |
+          github_runner_ip=$(curl -s https://api64.ipify.org)
+          echo "github_runner_ip=$github_runner_ip" >> $GITHUB_OUTPUT
+
+      - name: Open SSH port in Security Group
+        env:
+          region: ${{ env.AWS_REGION }}
+          sg_id: ${{ steps.fetch-sg-id.outputs.sg_id }}
+          github_runner_ip: ${{ steps.fetch-github-runner-ip.outputs.github_runner_ip }}
+        run: |
+          # open ssh port 22
+          aws ec2 authorize-security-group-ingress --group-id $sg_id --protocol tcp --port 22 --cidr ${github_runner_ip}/32 --region $region
+
+      - name: Fetch EC2 instance ID by tags and Execute scripts
+        env:
+          region: ${{ env.AWS_REGION }}
+          tag_name: ${{ env.INSTANCE_TAG_NAME }}
+          tag_value: ${{ env.INSTANCE_TAG_VALUE }}
+
+        id: fetch-ec2-id
+
+        run: |
+          # get instance id by tags
+          instance_id=$(aws ec2 describe-instances --filters "Name=tag:${tag_name},Values=${tag_value}" --query "Reservations[].Instances[].InstanceId" --output text --region $region)
+
+          if [ -z "$instance_id" ]; then
+            echo "Instance with specified tags not found."
+            exit 1
+          fi
+          echo "instance_id=$instance_id" >> $GITHUB_OUTPUT
+      - name: Run scripts on EC2
+        env:
+          region: ${{ env.AWS_REGION }}
+          instance_id: ${{ steps.fetch-ec2-id.outputs.instance_id }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          public_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query "Reservations[].Instances[].PublicIpAddress" --output text --region $region)
+          sudo apt-get install openssh-server
+          sudo systemctl enable ssh
+          sudo systemctl start ssh
+          mkdir -p "$HOME/.ssh"
+          chmod 0700 "$HOME/.ssh"
+          touch "$HOME/.ssh/known_hosts"
+          chmod 0644 "$HOME/.ssh/known_hosts"
+          echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan $public_ip >> ~/.ssh/known_hosts
+
+          # Check if ./docker/update.sh has changed
+          if [ "$(git diff --name-only HEAD^ HEAD | grep -c ./docker/update.sh)" -ne 0 ]; then
+            echo "File ./docker/update.sh has changed. Copying to remote machine."
+            scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ./docker/update.sh ubuntu@$public_ip:/home/ubuntu/update.sh
+          else
+            echo "File ./docker/update.sh has not changed. Skipping copy."
+          fi
+
+          # Check if ./docker-compose.yml has changed
+          if [ "$(git diff --name-only HEAD^ HEAD | grep -c ./docker-compose.yml)" -ne 0 ]; then
+            echo "File ./docker-compose.yml has changed. Copying to remote machine."
+            scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ./docker-compose.yml ubuntu@$public_ip:/home/ubuntu/docker-compose.yml
+          else
+            echo "File ./docker-compose.yml has not changed. Skipping copy."
+          fi
+
+          # Run update.sh on the remote machine
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@$public_ip "/home/ubuntu/update.sh"
+
+      - name: Close SSH port in Security Group
+        if: ${{ always() }}
+        env:
+          region: ${{ env.AWS_REGION }}
+          sg_id: ${{ steps.fetch-sg-id.outputs.sg_id }}
+          github_runner_ip: ${{ steps.fetch-github-runner-ip.outputs.github_runner_ip }}
+
+        run: |
+          # close ssh port 22
+          aws ec2 revoke-security-group-ingress --group-id $sg_id --protocol tcp --port 22 --cidr ${github_runner_ip}/32 --region $region

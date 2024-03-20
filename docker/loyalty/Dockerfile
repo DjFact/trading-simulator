@@ -13,4 +13,12 @@ COPY --from=build /usr/src/app/dist/apps/loyalty-service ./dist
 COPY --from=build /usr/src/app/config/loyalty ./config/loyalty
 COPY package*.json ./
 RUN npm install --omit=dev
+
+# Add entrypoint script
+RUN echo '#!/bin/sh' > /usr/local/bin/entrypoint.sh \
+    && echo 'export $(egrep -v '"'"'^#'"'"' /run/secrets/* | xargs)' >> /usr/local/bin/entrypoint.sh \
+    && echo 'exec "$@"' >> /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["node", "dist/main.js"]

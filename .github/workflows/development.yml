@@ -2,7 +2,7 @@ name: CI - Dev
 
 on:
   push:
-    branches: [dev, master]
+    branches: [dev]
 
 jobs:
   eslint:
