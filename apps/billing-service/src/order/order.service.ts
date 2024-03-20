@@ -54,12 +54,13 @@ export class OrderService {
   }
 
   async getAccountAndCheckFunds(
+    userId: string,
     order: Partial<OrderEntity>,
     price: number,
     transaction: Transaction,
   ): Promise<AccountEntity> {
     const account = await this.accountRepository.findByUserId(
-      order.userId,
+      userId,
       transaction,
     );
     if (!account) {
@@ -114,12 +115,18 @@ export class OrderService {
 
     const transaction = await this.sequelize.transaction();
     /** Check if account has enough funds */
-    await this.getAccountAndCheckFunds(orderDto, openPrice, transaction);
+    await this.getAccountAndCheckFunds(
+      userId,
+      orderDto,
+      openPrice,
+      transaction,
+    );
 
     try {
       const promises: Promise<any>[] = [
         this.orderRepository.create(
           {
+            userId,
             ...orderDto,
             status: OrderStatusEnum.Opened,
             openPrice,

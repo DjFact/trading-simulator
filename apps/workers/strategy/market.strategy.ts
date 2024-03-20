@@ -46,6 +46,7 @@ export class MarketStrategy extends BaseStrategy implements IStrategy {
   ): Promise<OrderEntity> {
     /** Check if account has enough funds */
     const account = await this.orderService.getAccountAndCheckFunds(
+      order.userId,
       order,
       closePrice,
       transaction,
@@ -82,7 +83,13 @@ export class MarketStrategy extends BaseStrategy implements IStrategy {
         ),
       );
 
-      const [updatedOrder] = await Promise.all(promises);
+      const [[cnt, [updatedOrder]]] = await Promise.all(promises);
+      if (cnt === 0) {
+        throw new StrategyException(
+          'Order not updated',
+          ExceptionCodeEnum.StrategyProcessingError,
+        );
+      }
       return new OrderEntity(updatedOrder);
     } catch (e) {
       this.logger.error(e, order);
@@ -118,7 +125,7 @@ export class MarketStrategy extends BaseStrategy implements IStrategy {
         order.userId,
         {
           assetSymbol: order.assetSymbol,
-          quantity: order.quantity,
+          quantity: (holding ? holding.quantity : 0) + order.quantity,
           averagePrice,
         },
         transaction,

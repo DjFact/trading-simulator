@@ -34,6 +34,7 @@ export class UserLoyaltyStatusRepository
             },
           },
           attributes: ['points'],
+          required: false,
         },
         {
           model: UserLoyaltyOrder,

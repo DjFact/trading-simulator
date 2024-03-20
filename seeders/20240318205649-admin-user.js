@@ -1,10 +1,13 @@
 'use strict';
 
+const Users = 'Users';
+const Accounts = 'Accounts';
+
 module.exports = {
   up: async (queryInterface) => {
     await Promise.all([
       queryInterface.bulkInsert(
-        'Users',
+        Users,
         [
           {
             id: '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b',
@@ -22,7 +25,7 @@ module.exports = {
       ),
 
       queryInterface.bulkInsert(
-        'Accounts',
+        Accounts,
         [
           {
             userId: '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b',
@@ -39,8 +42,8 @@ module.exports = {
 
   down: async (queryInterface) => {
     await Promise.all([
-      queryInterface.bulkDelete('Users', null, {}),
-      queryInterface.bulkDelete('Accounts', null, {}),
+      queryInterface.bulkDelete(Users, null, {}),
+      queryInterface.bulkDelete(Accounts, null, {}),
     ]);
   },
 };

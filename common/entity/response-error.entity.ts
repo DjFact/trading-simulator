@@ -16,7 +16,7 @@ export class ResponseErrorEntity {
   constructor(exception: any) {
     this.status = false;
     this.statusCode = exception.statusCode || exception.code;
-    this.error = exception.message;
+    this.error = exception.error?.error || exception.message || exception.error;
     this.time = new Date().toISOString();
 
     if (Array.isArray(this.error)) {

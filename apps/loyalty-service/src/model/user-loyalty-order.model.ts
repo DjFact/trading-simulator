@@ -20,7 +20,7 @@ import { UserLoyaltyStatus } from './user-loyalty-status.model';
 @Table({ timestamps: true })
 export class UserLoyaltyOrder extends Model {
   @PrimaryKey
-  @Column({ allowNull: false, type: DataType.UUID })
+  @Column({ type: DataType.UUID })
   id: string;
 
   @ForeignKey(() => UserLoyaltyStatus)

@@ -61,8 +61,8 @@ import { MailProcessor } from './consumer/mail.processor';
           transport: {
             host: configService.get('MAIL_HOST'),
             port: configService.get<number>('MAIL_PORT'),
-            secure: configService.get<boolean>('MAIL_SECURE'),
-            tls: { ciphers: 'SSLv3' }, // gmail
+            secure: false,
+            tls: { rejectUnauthorized: false }, // gmail
             auth: {
               user: configService.get('MAIL_USER'),
               pass: configService.get('MAIL_PASS'),

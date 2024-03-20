@@ -1,5 +1,5 @@
 cache:
-  ttl: 60
+  ttl: 60000
   prefix: 'AUTH_SERVICE'
 
 app:

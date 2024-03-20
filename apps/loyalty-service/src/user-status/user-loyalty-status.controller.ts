@@ -2,7 +2,11 @@
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
  * Date: 15/03/2024 23:34
  */
-import { Controller } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Controller,
+  UseInterceptors,
+} from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LoyaltyCommandEnum } from '../../../../common/enum/loyalty-command.enum';
 import { UserLoyaltyStatusService } from './user-loyalty-status.service';
@@ -12,6 +16,7 @@ import { UserLoyaltyStatusEntity } from '../../../../common/entity/user-loyalty-
 import { UserLoyaltyOrderEntity } from '../../../../common/entity/user-loyalty-order.entity';
 
 @Controller()
+@UseInterceptors(ClassSerializerInterceptor)
 export class UserLoyaltyStatusController {
   constructor(private readonly userStatusService: UserLoyaltyStatusService) {}
 

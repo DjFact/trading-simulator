@@ -31,7 +31,7 @@ export class UserLoyaltyPrizePoint extends Model {
   @Column({ type: DataType.UUID, allowNull: false })
   orderId: string;
 
-  @Column({ type: DataType.INTEGER, defaultValue: 0 })
+  @Column({ type: DataType.FLOAT, defaultValue: 0 })
   points: number;
 
   @Column({ type: DataType.DATE })

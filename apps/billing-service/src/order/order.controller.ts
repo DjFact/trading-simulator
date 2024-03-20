@@ -1,7 +1,11 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
  */
-import { Controller } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Controller,
+  UseInterceptors,
+} from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { OrderService } from './order.service';
 import { BillingCommandEnum } from '../../../../common/enum/billing-command.enum';
@@ -13,6 +17,7 @@ import { OrderFilterDto } from '../../../../common/dto/order-filter.dto';
 import { TotalDataEntity } from '../../../../common/entity/total-data.entity';
 
 @Controller()
+@UseInterceptors(ClassSerializerInterceptor)
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 

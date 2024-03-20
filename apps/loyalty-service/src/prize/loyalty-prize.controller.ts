@@ -2,7 +2,11 @@
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
  * Date: 15/03/2024 23:34
  */
-import { Controller } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Controller,
+  UseInterceptors,
+} from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LoyaltyCommandEnum } from '../../../../common/enum/loyalty-command.enum';
 import { TotalDataEntity } from '../../../../common/entity/total-data.entity';
@@ -14,6 +18,7 @@ import { LoyaltyPrizeDto } from '../../../../common/dto/loyalty-prize.dto';
 import { LoyaltyPrizeFilterDto } from '../../../../common/dto/loyalty-prize-filter.dto';
 
 @Controller()
+@UseInterceptors(ClassSerializerInterceptor)
 export class LoyaltyPrizeController {
   constructor(private readonly prizeService: LoyaltyPrizeService) {}
 

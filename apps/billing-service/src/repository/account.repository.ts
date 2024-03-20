@@ -35,7 +35,10 @@ export class AccountRepository implements IAccountRepository {
     transaction?: Transaction,
   ): Promise<[affectedRows: Account[], affectedCount?: number]> {
     return this.accountModel.increment(
-      { balance, reserved },
+      {
+        ...(balance && { balance }),
+        ...(reserved && { reserved }),
+      },
       {
         where: { userId },
         transaction,

@@ -27,6 +27,13 @@ export class UserLoyaltyPrizePointRepository
     });
   }
 
+  async create(
+    data: Partial<UserLoyaltyPrizePoint>,
+    transaction?: Transaction,
+  ): Promise<UserLoyaltyPrizePoint> {
+    return this.userPrizePointModel.create(data, { transaction });
+  }
+
   async updateById(
     id: number,
     data: Partial<UserLoyaltyPrizePoint>,

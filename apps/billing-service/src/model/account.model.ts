@@ -18,10 +18,10 @@ export class Account extends Model {
   @Column({ allowNull: false, type: DataType.UUID })
   userId: string;
 
-  @Column({ type: DataType.DECIMAL(20, 8), defaultValue: 0 })
+  @Column({ type: DataType.FLOAT, defaultValue: 0 })
   balance: number;
 
-  @Column({ type: DataType.DECIMAL(20, 8), defaultValue: 0 })
+  @Column({ type: DataType.FLOAT, defaultValue: 0 })
   reserved: number;
 
   @HasMany(() => Holding)

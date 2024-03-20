@@ -11,6 +11,11 @@ export interface IUserLoyaltyPrizePointRepository {
     transaction?: Transaction,
   ): Promise<Partial<UserLoyaltyPrizePoint>[]>;
 
+  create(
+    data: Partial<UserLoyaltyPrizePoint>,
+    transaction?: Transaction,
+  ): Promise<UserLoyaltyPrizePoint>;
+
   updateById(
     id: number,
     data: Partial<UserLoyaltyPrizePoint>,

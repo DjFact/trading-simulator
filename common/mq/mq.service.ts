@@ -38,13 +38,9 @@ export class MqService {
       });
     }
 
-    await this.publishChannel.sendToQueue(
-      queueName,
-      Buffer.from(JSON.stringify(data)),
-      {
-        persistent: true,
-      },
-    );
+    await this.publishChannel.sendToQueue(queueName, JSON.stringify(data), {
+      persistent: true,
+    });
   }
 
   consumeMessages<T>(queueName: string, onMessage: (msg: T) => Promise<void>) {
@@ -61,7 +57,7 @@ export class MqService {
             return;
           }
           const content: T = JSON.parse(msg.content.toString());
-          this.logger.log(`Received message from ${queueName}: ${content}`);
+          this.logger.log(`Received message from ${queueName}`, content);
           await onMessage(content);
 
           channel.ack(msg);
@@ -81,7 +77,6 @@ export class MqService {
 
   protected createChannel(): ChannelWrapper {
     return this.connection.createChannel({
-      json: true,
       setup: () => Promise.resolve(),
     });
   }

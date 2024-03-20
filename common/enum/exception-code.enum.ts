@@ -48,6 +48,7 @@ export enum ExceptionCodeEnum {
   UserLoyaltyStatusNotUpdated = 7008,
   TradeTimeNotEnough = 7009,
   PricePointsNotEnough = 7010,
+  LoyaltyNotAvailable = 7011,
 
   SendMailError = 8000,
   OneTimePasswordAlreadySent = 8001,

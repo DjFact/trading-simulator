@@ -1,7 +1,11 @@
 /**
  * Created by Viktor Plotnikov <viktorr.plotnikov@gmail.com>
  */
-import { Controller } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Controller,
+  UseInterceptors,
+} from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { BillingCommandEnum } from '../../../../common/enum/billing-command.enum';
 import { BalanceService } from './balance.service';
@@ -10,6 +14,7 @@ import { TopUpDto } from '../../../../common/dto/top-up.dto';
 import { AccountEntity } from '../../../../common/entity/balance.entity';
 
 @Controller()
+@UseInterceptors(ClassSerializerInterceptor)
 export class BalanceController {
   constructor(private readonly balanceService: BalanceService) {}
 

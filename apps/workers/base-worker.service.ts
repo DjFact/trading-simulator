@@ -39,7 +39,9 @@ export abstract class BaseWorkerService implements OnModuleInit {
 
   protected async processOrderFromQueue(orderDto: OrderDto): Promise<void> {
     /** todo: get close price from market */
-    const closePrice = 110;
+    /** random close price from 90 to 120 */
+    const closePrice = Math.floor(Math.random() * 30) + 90;
+
     const transaction = await this.strategy.createTransaction();
 
     let processedOrder: OrderEntity;
@@ -66,6 +68,8 @@ export abstract class BaseWorkerService implements OnModuleInit {
       isOrderProcessed = true;
     } catch (e) {
       await transaction.rollback();
+      this.logger.error(e);
+
       if (e instanceof BillingException) {
         const cancelTransaction = await this.strategy.createTransaction();
         if (e.code === ExceptionCodeEnum.OrderExpired) {
@@ -83,7 +87,6 @@ export abstract class BaseWorkerService implements OnModuleInit {
         await cancelTransaction.commit();
         isOrderProcessed = true;
       } else {
-        this.logger.error(e);
         const { queueName } = this.getWorkerConfig();
         await this.mqService.sendToQueue(queueName as string, orderDto);
       }

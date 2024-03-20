@@ -80,12 +80,12 @@ export class UserLoyaltyStatusProcessor implements OnModuleInit {
       await transaction.commit();
     } catch (e) {
       await transaction.rollback();
+      this.logger.error(e);
       if (!(e instanceof LoyaltyException)) {
         await this.mqService.sendToQueue(
           QueueNameEnum.RecalculateLoyalty as string,
           payload,
         );
-        this.logger.error(e);
       }
     }
   }
@@ -99,20 +99,28 @@ export class UserLoyaltyStatusProcessor implements OnModuleInit {
       userId,
       transaction,
     );
-    if (!userStatus && order) {
+    if (!userStatus) {
+      if (!order.id) {
+        throw new LoyaltyException(
+          'Loyalty not available without order',
+          ExceptionCodeEnum.LoyaltyNotAvailable,
+        );
+      }
       const newStatus = await this.userStatusRepository.create(
-        { userId: order.userId, status: LoyaltyStatusEnum.Executive },
+        { userId, status: LoyaltyStatusEnum.Executive },
         transaction,
       );
       return new RecalculatedLoyaltyStatusEntity(newStatus, true);
     }
 
     let points = userStatus.points;
-    if (order) {
+    if (order.id) {
       if (
         userStatus.loyalty.tradeTime >
         Math.floor(
-          (order.closedAt.getTime() - order.createdAt.getTime()) / 1000,
+          (new Date(order.closedAt).getTime() -
+            new Date(order.createdAt).getTime()) /
+            1000,
         )
       ) {
         throw new LoyaltyException(
@@ -130,16 +138,29 @@ export class UserLoyaltyStatusProcessor implements OnModuleInit {
         );
       }
 
-      points = Math.floor(points + order.quantity / LOT);
+      points += Math.floor(order.quantity / LOT);
     }
 
-    return this.updateUserLoyaltyStatus(
+    const updatedStatus = await this.updateUserLoyaltyStatus(
       userId,
       userStatus,
       points,
-      !!order,
+      !!order.id,
       transaction,
     );
+
+    if (order.id) {
+      const prizePoints =
+        Math.round(order.quantity / LOT) * userStatus.loyalty.prizeCoef;
+      if (prizePoints > 0) {
+        await this.userPrizePointsRepository.create(
+          { userId, orderId: order.id, points: prizePoints },
+          transaction,
+        );
+      }
+    }
+
+    return updatedStatus;
   }
 
   private async getUserDeposit(userId: string): Promise<number> {
@@ -165,21 +186,16 @@ export class UserLoyaltyStatusProcessor implements OnModuleInit {
     const currentDeposit = await this.getUserDeposit(userId);
 
     const { rows: statuses } = await this.statusRepository.findAll(transaction);
-
     let newUserStatus: string;
     for (const status of statuses) {
-      if (
-        points >= status.points &&
-        currentDeposit >= status.deposit &&
-        status.name !== currentStatus.status
-      ) {
+      if (points >= status.points && currentDeposit >= status.deposit) {
         newUserStatus = status.name;
       } else {
         break;
       }
     }
 
-    if (newUserStatus || isOrder) {
+    if (newUserStatus !== currentStatus.status || isOrder) {
       const [cnt, [updatedStatus]] = await this.userStatusRepository.update(
         userId,
         { points, ...(newUserStatus && { status: newUserStatus }) },

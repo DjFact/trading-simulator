@@ -26,7 +26,7 @@ import { v4 as uuidv4 } from 'uuid';
 })
 export class Order extends Model {
   @PrimaryKey
-  @Column({ allowNull: false, type: DataType.UUID })
+  @Column({ type: DataType.UUID })
   id: string;
 
   @ForeignKey(() => Account)

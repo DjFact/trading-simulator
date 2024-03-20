@@ -59,10 +59,7 @@ export class UserLoyaltyStatusService {
 
       if (
         inactiveDays > userStatus.loyalty.expiresAfterDays &&
-        !(
-          userStatus.status === LoyaltyStatusEnum.Executive &&
-          userStatus.points === 0
-        )
+        userStatus.status !== LoyaltyStatusEnum.Executive
       ) {
         await this.userStatusRepository.update(
           userId,
