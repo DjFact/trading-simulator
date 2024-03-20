@@ -29,7 +29,9 @@ $ npm install
 ```
 
 ## Running the app
+Before running the app, you need to create a .env file for each service in config/SERVICE_NAME. You can use the .env.local files as a template.
 
+```bash
 ### Development mode
 ```bash
 # start gateway
