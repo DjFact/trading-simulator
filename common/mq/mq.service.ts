@@ -47,10 +47,7 @@ export class MqService {
     );
   }
 
-  consumeMessages(
-    queueName: string,
-    onMessage: (msg: ConsumeMessage, channel: ChannelWrapper) => void,
-  ) {
+  consumeMessages<T>(queueName: string, onMessage: (msg: T) => Promise<void>) {
     this.subscribeChannel.addSetup(async (channel: Channel) => {
       if (!this.subDeclared.has(queueName)) {
         await channel.assertQueue(queueName, { durable: true });
@@ -59,13 +56,15 @@ export class MqService {
       this.logger.log(`Consume messages from ${queueName}`);
       await channel.consume(
         queueName,
-        (msg: ConsumeMessage) => {
+        async (msg: ConsumeMessage) => {
           if (!msg) {
             return;
           }
-          const content = JSON.parse(msg.content.toString());
+          const content: T = JSON.parse(msg.content.toString());
           this.logger.log(`Received message from ${queueName}: ${content}`);
-          onMessage(content, this.subscribeChannel);
+          await onMessage(content);
+
+          channel.ack(msg);
         },
         { noAck: false },
       );

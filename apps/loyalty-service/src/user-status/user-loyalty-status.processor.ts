@@ -20,8 +20,6 @@ import { ExceptionCodeEnum } from '../../../../common/enum/exception-code.enum';
 import { LoyaltyStatusRepository } from '../repository/loyalty-status.repository';
 import { ClientProxyService } from '../../../../common/client-proxy/client-proxy.service';
 import { QueueNameEnum } from '../../../../common/enum/queue-name.enum';
-import { ConsumeMessage } from 'amqplib';
-import { ChannelWrapper } from 'amqp-connection-manager';
 import { UserLoyaltyStatus } from '../model/user-loyalty-status.model';
 import { InjectQueue } from '@nestjs/bull';
 import { NOTIFY_BY_SOCKET_QUEUE } from '../../../gateway/src/websocket/processor/socket-gateway.processor';
@@ -47,7 +45,7 @@ export class UserLoyaltyStatusProcessor implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.mqService.consumeMessages(
+    this.mqService.consumeMessages<Partial<OrderEntity>>(
       QueueNameEnum.RecalculateLoyalty,
       this.processRecalculateLoyalty.bind(this),
     );
@@ -61,20 +59,24 @@ export class UserLoyaltyStatusProcessor implements OnModuleInit {
   }
 
   protected async processRecalculateLoyalty(
-    msg: ConsumeMessage,
-    channel: ChannelWrapper,
+    payload: Partial<OrderEntity>,
   ): Promise<void> {
-    const payload = JSON.parse(msg.content.toString());
     const { userId, ...order }: Partial<OrderEntity> = payload;
 
-    let recalculatedStatus: RecalculatedLoyaltyStatusEntity;
     const transaction = await this.sequelize.transaction();
     try {
-      recalculatedStatus = await this.recalculateStatus(
+      const recalculatedStatus = await this.recalculateStatus(
         userId,
         transaction,
         order,
       );
+
+      /** send notification to user by websockets */
+      await this.notifyBySocketQueue.add(
+        WsSocketSendEventEnum.UpdatedLoyaltyStatus,
+        instanceToPlain(recalculatedStatus),
+      );
+
       await transaction.commit();
     } catch (e) {
       await transaction.rollback();
@@ -85,16 +87,6 @@ export class UserLoyaltyStatusProcessor implements OnModuleInit {
         );
         this.logger.error(e);
       }
-    }
-
-    channel.ack(msg);
-
-    /** send notification to user by websockets */
-    if (recalculatedStatus) {
-      await this.notifyBySocketQueue.add(
-        WsSocketSendEventEnum.UpdatedLoyaltyStatus,
-        instanceToPlain(recalculatedStatus),
-      );
     }
   }
 

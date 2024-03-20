@@ -8,8 +8,6 @@ import { QueueNameEnum } from '../../common/enum/queue-name.enum';
 import { StrategyFactory } from './strategy/strategy.factory';
 import { MqService } from '../../common/mq/mq.service';
 import { OrderTypeEnum } from '../../common/enum/order-type.enum';
-import { ConsumeMessage } from 'amqplib';
-import { ChannelWrapper } from 'amqp-connection-manager';
 import { OrderDto } from '../../common/dto/order.dto';
 import { ExceptionCodeEnum } from '../../common/enum/exception-code.enum';
 import { instanceToPlain } from 'class-transformer';
@@ -33,18 +31,13 @@ export abstract class BaseWorkerService implements OnModuleInit {
 
   onModuleInit() {
     const { queueName } = this.getWorkerConfig();
-    this.mqService.consumeMessages(
+    this.mqService.consumeMessages<OrderDto>(
       queueName as string,
       this.processOrderFromQueue.bind(this),
     );
   }
 
-  protected async processOrderFromQueue(
-    msg: ConsumeMessage,
-    channel: ChannelWrapper,
-  ): Promise<void> {
-    const orderDto: OrderDto = JSON.parse(msg.content.toString());
-
+  protected async processOrderFromQueue(orderDto: OrderDto): Promise<void> {
     /** todo: get close price from market */
     const closePrice = 110;
     const transaction = await this.strategy.createTransaction();
@@ -95,8 +88,6 @@ export abstract class BaseWorkerService implements OnModuleInit {
         await this.mqService.sendToQueue(queueName as string, orderDto);
       }
     }
-
-    channel.ack(msg);
 
     if (isOrderProcessed) {
       await this.notifyBySocketQueue.add(
