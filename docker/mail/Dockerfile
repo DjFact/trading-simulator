@@ -17,7 +17,8 @@ RUN npm install --omit=dev
 
 # Add entrypoint script
 RUN echo '#!/bin/sh' > /usr/local/bin/entrypoint.sh \
-    && echo 'export $(egrep -v '"'"'^#'"'"' /run/secrets/* | xargs)' >> /usr/local/bin/entrypoint.sh \
+    && echo 'set -a' >> /usr/local/bin/entrypoint.sh \
+    && echo '. /run/secrets/*' >> /usr/local/bin/entrypoint.sh \
     && echo 'exec "$@"' >> /usr/local/bin/entrypoint.sh \
     && chmod +x /usr/local/bin/entrypoint.sh
 
