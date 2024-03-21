@@ -147,22 +147,28 @@ jobs:
             trading.production.gateway:
               - 'apps/gateway/**'
               - 'config/gateway/**'
+              - 'docker/gateway/**'
             trading.production.billing:
               - 'apps/billing-service/**'
               - 'config/billing/**'
+              - 'docker/billing/**'
             trading.production.auth:
               - 'apps/auth-service/**'
               - 'config/auth/**'
+              - 'docker/auth/**'
             trading.production.loyalty:
               - 'apps/loyalty-service/**'
               - 'config/loyalty/**'
+              - 'docker/loyalty/**'
             trading.production.mail:
               - 'apps/mail-service/**'
               - 'config/mail/**'
               - 'templates/**'
+              - 'docker/mail/**'
             trading.production.worker_market:
               - 'apps/workers/**'
               - 'config/workers/**'
+              - 'docker/worker-market/**'
             all:
               - 'libs/**'
               - 'common/**'
